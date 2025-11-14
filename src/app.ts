@@ -1,0 +1,66 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import authRoutes from './routes/authRoutes';
+import emailRoutes from './routes/emailRoutes';
+import passwordRoutes from './routes/passwordRoutes';
+import tokenRoutes from './routes/tokenRoutes';
+import companyRoutes from './routes/companyRoutes';
+import { config } from './config';
+import { apiLimiter } from './middleware/rateLimiter';
+import logger from './utils/logger';
+
+const app = express();
+
+// Security middleware
+app.use(helmet());
+
+// CORS configuration
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: true,
+  })
+);
+
+// Logging
+app.use(morgan('dev'));
+
+// Body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Apply rate limiting to all routes (temporarily disabled for testing)
+// app.use('/api/', apiLimiter);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/password', passwordRoutes);
+app.use('/api/token', tokenRoutes);
+app.use('/api/companies', companyRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
+});
+
+// Error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+  });
+});
+
+export default app;

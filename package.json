@@ -1,0 +1,61 @@
+{
+  "name": "contractor-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Contractor Management System",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "migrate": "node -r ts-node/register src/database/migrate.ts",
+    "migrate:fresh": "node scripts/create-db.js && npm run migrate",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "contractor",
+    "authentication",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "nodemailer": "^7.0.10",
+    "pg": "^8.11.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.10.5",
+    "@types/nodemailer": "^7.0.3",
+    "@types/pg": "^8.10.9",
+    "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@types/uuid": "^10.0.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

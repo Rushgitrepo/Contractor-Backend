@@ -1,0 +1,546 @@
+[
+  {
+    "company": {
+      "name": "Engineered Electric Services, LLC",
+      "rating": 4.7,
+      "reviews_count": 32,
+      "verified_hires": 12,
+      "tagline": "Your single source solution for electrical engineering, construction, commissioning, and startup!",
+      "featured_review": {
+        "reviewer": "John M.",
+        "review_text": "Great experience working with their engineering team. Professional and knowledgeable."
+      },
+      "details": {
+        "address": "520 Prairie Industrial Parkway, Mulberry, Florida 33860",
+        "verified_business": true,
+        "description": "Engineered Electric Services is a certified electrical contractor specializing in commercial and industrial engineering design-build, construction, arc flash consulting, training and compliance.",
+        "years_in_business": 48,
+        "license_number": "EC13013307",
+        "certifications": [
+          "EASA – Electrical Apparatus Service Association",
+          "NETA – National Electrical Testing Association",
+          "IEEE – The Institute of Electrical and Electronics Engineers",
+          "IEC – Independent Electrical Contractor",
+          "ECF – Electrical Council of Florida"
+        ],
+        "awards": [
+          "2020 Excellence in Electrical Contracting Award"
+        ],
+        "services_offered": [
+          "Electrical Engineering",
+          "Electrical Design/Build",
+          "Testing",
+          "Generator services",
+          "Electrical Construction",
+          "Arc Flash Training and assessments"
+        ],
+        "specialties": [
+          "Electrical Engineering",
+          "Electrical Design/Build",
+          "Testing",
+          "Generator services",
+          "Electrical Construction",
+          "Arc Flash Training and assessments"
+        ],
+        "service_areas": [
+          { "city": "Mulberry", "zip_code": "33860" },
+          { "city": "Tampa", "zip_code": "33602" },
+          { "city": "Houston", "zip_code": "77079" }
+        ],
+        "responds_quickly": true,
+        "hired_on_platform": true,
+        "provides_3d_visualization": false,
+        "eco_friendly": true,
+        "family_owned": false,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English", "Spanish"],
+        "budget_range": "$$$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 4.7,
+        "total_reviews": 32,
+        "highlights": "Known for precision engineering and on-time project completion.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "T MCDONALD, LLC",
+      "rating": 4.4,
+      "reviews_count": 14,
+      "verified_hires": 6,
+      "tagline": "Empowering through quality roofing solutions.",
+      "featured_review": {
+        "reviewer": "Sarah J.",
+        "review_text": "Very professional roofing service. Fast and reliable!"
+      },
+      "details": {
+        "address": "8465 Delport Drive, ST LOUIS, MO 63114",
+        "verified_business": true,
+        "description": "T MCDONALD, LLC specializes in providing top-notch roofing services across Missouri.",
+        "years_in_business": 5,
+        "license_number": "M18000010580",
+        "certifications": [
+          "Certified Roofing Professional",
+          "GAF Authorized Installer"
+        ],
+        "awards": [],
+        "services_offered": [
+          "Roofing installation",
+          "Roof repair",
+          "Roof maintenance"
+        ],
+        "specialties": [
+          "Commercial roofing",
+          "Residential roofing"
+        ],
+        "service_areas": [
+          { "city": "St. Louis", "zip_code": "63114" }
+        ],
+        "responds_quickly": false,
+        "hired_on_platform": false,
+        "provides_3d_visualization": false,
+        "eco_friendly": false,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English"],
+        "budget_range": "$$",
+        "professional_category": "Home Builders"
+      },
+      "client_reviews": {
+        "average_rating": 4.4,
+        "total_reviews": 14,
+        "highlights": "Appreciated for fast response and reasonable pricing.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "Westra Construction Corp",
+      "rating": 4.8,
+      "reviews_count": 19,
+      "verified_hires": 10,
+      "tagline": "Leaders in Quality Construction and Infrastructure",
+      "featured_review": {
+        "reviewer": "David R.",
+        "review_text": "Exceptional work in utility infrastructure. Highly recommended."
+      },
+      "details": {
+        "address": "1263 12th Ave East, Palmetto, FL 34221",
+        "verified_business": true,
+        "description": "Since 1977, Westra Construction Corp. has specialized in heavy construction projects.",
+        "years_in_business": 46,
+        "license_number": "CGC062888, CUC057151",
+        "certifications": [
+          "General Contractor",
+          "Underground Utility Contractor"
+        ],
+        "awards": [
+          "2017 Project of the Year, America Public Works Association, FL Chapter",
+          "2017 Project of the Year Design-Build Institute of America, FL Region"
+        ],
+        "services_offered": [
+          "Design-Build",
+          "Heavy Civil / DOT / Utilities & Transmission Mains",
+          "Water / Waste Water Treatment Facilities / Pump Stations & Master Lift Stations"
+        ],
+        "specialties": [
+          "Utility Contracting",
+          "Infrastructure Development"
+        ],
+        "service_areas": [
+          { "city": "Palmetto", "zip_code": "34221" },
+          { "city": "Hillsborough County", "zip_code": "33510" },
+          { "city": "Pinellas County", "zip_code": "33701" },
+          { "city": "Manatee County", "zip_code": "34205" }
+        ],
+        "responds_quickly": true,
+        "hired_on_platform": true,
+        "provides_3d_visualization": true,
+        "eco_friendly": true,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English", "Spanish"],
+        "budget_range": "$$$$",
+        "professional_category": "Design-Build Firms"
+      },
+      "client_reviews": {
+        "average_rating": 4.8,
+        "total_reviews": 19,
+        "highlights": "Renowned for excellence in large-scale municipal construction.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "Tampa Bay Awning LLC",
+      "rating": 4.9,
+      "reviews_count": 52,
+      "verified_hires": 23,
+      "tagline": "Expand your outdoor living space with fashionable and functional shade solutions.",
+      "featured_review": {
+        "reviewer": "Pamela Crabtree",
+        "review_text": "It was a pleasure to work with such an efficient and competent company."
+      },
+      "details": {
+        "address": "3902 Corporex Park Drive, Tampa, FL",
+        "verified_business": true,
+        "description": "Tampa Bay Awning specializes in high-quality awnings and screen systems.",
+        "years_in_business": 12,
+        "license_number": "AWN-45212",
+        "certifications": [
+          "Certified Awning Installer",
+          "SunSetter Authorized Dealer"
+        ],
+        "awards": [],
+        "services_offered": [
+          "Retractable Awnings",
+          "Stationary Fabric Awnings & Canopies",
+          "Motorized Screens",
+          "Hurricane Screens",
+          "Awning Repair & Replacement Covers",
+          "Outdoor Draperies & Curtains"
+        ],
+        "specialties": [
+          "High-quality retractable awnings",
+          "Motorized screens",
+          "Hurricane screens"
+        ],
+        "service_areas": [
+          { "city": "Tampa", "zip_code": "33602" },
+          { "city": "Saint Petersburg", "zip_code": "33701" },
+          { "city": "Clearwater", "zip_code": "33755" },
+          { "city": "Tarpon Springs", "zip_code": "34689" },
+          { "city": "Wesley Chapel", "zip_code": "33543" },
+          { "city": "Brandon", "zip_code": "33510" },
+          { "city": "Apollo Beach", "zip_code": "33572" },
+          { "city": "Springhill", "zip_code": "34608" },
+          { "city": "Plant City", "zip_code": "33563" },
+          { "city": "Hudson", "zip_code": "34667" },
+          { "city": "New Port Richey", "zip_code": "34652" },
+          { "city": "Lutz", "zip_code": "33549" },
+          { "city": "Dade City", "zip_code": "33523" },
+          { "city": "Zephyrhills", "zip_code": "33542" },
+          { "city": "Riverview", "zip_code": "33578" },
+          { "city": "Lakeland", "zip_code": "33801" }
+        ],
+        "responds_quickly": true,
+        "hired_on_platform": true,
+        "provides_3d_visualization": false,
+        "eco_friendly": false,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English"],
+        "budget_range": "$$$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 4.9,
+        "total_reviews": 52,
+        "highlights": "Highly rated for quality installation and customer satisfaction.",
+        "reviews": [
+          {
+            "reviewer": "Richard Molony-Steiner",
+            "location": "Tampa, FL",
+            "date": "2024-03-10",
+            "project": "Installation of Retractable Awnings",
+            "review_text": "Professional and high-quality work."
+          },
+          {
+            "reviewer": "Lawrence Zegan",
+            "location": "Saint Petersburg, FL",
+            "date": "2024-03-01",
+            "project": "Awning Installation",
+            "review_text": "Fast and clean installation."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "KAFE CONSTRUCTION, INC",
+      "rating": 4.3,
+      "reviews_count": 9,
+      "verified_hires": 3,
+      "tagline": "Bringing Your Dreams to Reality, One Project at a Time",
+      "featured_review": {
+        "reviewer": "Emily R.",
+        "review_text": "Great craftsmanship on our home addition!"
+      },
+      "details": {
+        "address": "St. Petersburg, FL, USA",
+        "verified_business": false,
+        "description": "Kafé Construction specializes in custom homes, additions, and remodels.",
+        "years_in_business": 7,
+        "license_number": "RES-2022045",
+        "certifications": [
+          "Certified Residential Contractor"
+        ],
+        "awards": [],
+        "services_offered": [
+          "Custom Home Build",
+          "Home Remodel",
+          "Home Addition"
+        ],
+        "specialties": [
+          "Custom Homes",
+          "Additions",
+          "Remodels"
+        ],
+        "service_areas": [
+          { "city": "St. Petersburg", "zip_code": "33701" },
+          { "city": "Tampa", "zip_code": "33602" }
+        ],
+        "responds_quickly": false,
+        "hired_on_platform": false,
+        "provides_3d_visualization": true,
+        "eco_friendly": false,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English"],
+        "budget_range": "$$$",
+        "professional_category": "Home Builders"
+      },
+      "client_reviews": {
+        "average_rating": 4.3,
+        "total_reviews": 9,
+        "highlights": "Known for attention to detail and high-quality interior work.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "Harper's Air Inc",
+      "rating": 4.9,
+      "reviews_count": 88,
+      "verified_hires": 40,
+      "tagline": "South Florida's Premier Certified Air Conditioning Contractor",
+      "featured_review": {
+        "reviewer": "Lourdes P.",
+        "review_text": "Excellent service! Technician was very professional."
+      },
+      "details": {
+        "address": "1031 SW 69 Avenue, Miami, FL 33144",
+        "verified_business": true,
+        "description": "Family owned and operated since 1969, Harper's Air provides high-quality HVAC services.",
+        "years_in_business": 54,
+        "license_number": "CAC023492",
+        "certifications": [
+          "State of Florida Class A Air Conditioning Contractor"
+        ],
+        "awards": [
+          "Best HVAC Company Miami 2022"
+        ],
+        "services_offered": [
+          "Air Conditioning Repair",
+          "Air Conditioning Installation",
+          "HVAC Maintenance",
+          "New Construction HVAC Services",
+          "Commercial HVAC Services",
+          "Residential HVAC Services"
+        ],
+        "specialties": [
+          "HVAC",
+          "Cooling Systems",
+          "Air Quality Control"
+        ],
+        "service_areas": [
+          { "city": "Miami", "zip": "33144" },
+          { "city": "Miami", "zip": "33155" },
+          { "city": "Coral Gables", "zip": "33134" },
+          { "city": "Havana", "zip": "32333" }
+        ],
+        "responds_quickly": true,
+        "hired_on_platform": true,
+        "provides_3d_visualization": false,
+        "eco_friendly": true,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": false,
+        "languages": ["English", "Spanish"],
+        "budget_range": "$$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 4.9,
+        "total_reviews": 88,
+        "highlights": "Praised for professionalism, fast response, and expertise.",
+        "reviews": [
+          {
+            "reviewer": "Lourdes P.",
+            "location": "Miami, FL 33155",
+            "date": "September 10, 2025",
+            "project": "Air Conditioner Repair",
+            "review_text": "Great experience and quick repair."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "KPL HOME SOLUTIONS LLC",
+      "rating": 4.0,
+      "reviews_count": 4,
+      "verified_hires": 1,
+      "tagline": "Reliable Home Improvement Services",
+      "featured_review": {
+        "reviewer": "Alex R.",
+        "review_text": "Good service for small home repairs."
+      },
+      "details": {
+        "address": "Tampa, FL",
+        "verified_business": false,
+        "description": "KPL Home Solutions offers general home repair and improvement services.",
+        "years_in_business": 2,
+        "license_number": "HMS-00932",
+        "certifications": [],
+        "awards": [],
+        "services_offered": [
+          "Handyman Services",
+          "Home Repairs",
+          "Minor Renovations"
+        ],
+        "specialties": [
+          "Repair Work",
+          "Small Renovations"
+        ],
+        "service_areas": [
+          { "city": "Tampa", "zip_code": "33604" }
+        ],
+        "responds_quickly": false,
+        "hired_on_platform": false,
+        "provides_3d_visualization": false,
+        "eco_friendly": false,
+        "family_owned": false,
+        "locally_owned": true,
+        "offers_custom_work": false,
+        "languages": ["English"],
+        "budget_range": "$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 4.0,
+        "total_reviews": 4,
+        "highlights": "Affordable and reliable services.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "Morrow Electric, Inc",
+      "rating": 4.5,
+      "reviews_count": 8,
+      "verified_hires": 3,
+      "tagline": "Master Electrical Contractor- Commercial, Residential, Service.",
+      "featured_review": {
+        "reviewer": "Shirley Boley",
+        "review_text": "They have handled many difficult electrical problems for us."
+      },
+      "details": {
+        "address": "19030 1st Street N.E., Lutz, Florida 33549",
+        "verified_business": true,
+        "description": "The Morrow family has been in the Electrical Industry since 1978.",
+        "years_in_business": 45,
+        "license_number": "ELEC-23231",
+        "certifications": [],
+        "awards": [],
+        "services_offered": [
+          "Commercial & Residential Services",
+          "New construction",
+          "Remodels",
+          "Control Work",
+          "LED lighting",
+          "Fire Alarm",
+          "Low Voltage",
+          "Surveillance"
+        ],
+        "specialties": [
+          "Commercial Electrical Projects",
+          "Residential Electrical Services"
+        ],
+        "service_areas": [
+          { "city": "Lutz", "zip_code": "33549" }
+        ],
+        "responds_quickly": true,
+        "hired_on_platform": false,
+        "provides_3d_visualization": false,
+        "eco_friendly": false,
+        "family_owned": true,
+        "locally_owned": true,
+        "offers_custom_work": true,
+        "languages": ["English"],
+        "budget_range": "$$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 4.5,
+        "total_reviews": 8,
+        "highlights": "Trusted for commercial warehouse work.",
+        "reviews": []
+      }
+    }
+  },
+  {
+    "company": {
+      "name": "Concurrent Group LLC",
+      "rating": 3.8,
+      "reviews_count": 2,
+      "verified_hires": 1,
+      "tagline": "Innovative Contracting & Repair Services",
+      "featured_review": {
+        "reviewer": "Mark T.",
+        "review_text": "Decent service for a quick job."
+      },
+      "details": {
+        "address": "Orlando, FL",
+        "verified_business": false,
+        "description": "Concurrent Group provides small-scale contracting and maintenance services.",
+        "years_in_business": 1,
+        "license_number": "CNT-55782",
+        "certifications": [],
+        "awards": [],
+        "services_offered": [
+          "Contracting Services",
+          "Electrical Repair",
+          "Maintenance"
+        ],
+        "specialties": [
+          "Small Repairs",
+          "Basic Electrical Work"
+        ],
+        "service_areas": [
+          { "city": "Orlando", "zip_code": "32801" }
+        ],
+        "responds_quickly": false,
+        "hired_on_platform": false,
+        "provides_3d_visualization": false,
+        "eco_friendly": false,
+        "family_owned": false,
+        "locally_owned": false,
+        "offers_custom_work": false,
+        "languages": ["English"],
+        "budget_range": "$",
+        "professional_category": "General Contractors"
+      },
+      "client_reviews": {
+        "average_rating": 3.8,
+        "total_reviews": 2,
+        "highlights": "Good for small jobs.",
+        "reviews": []
+      }
+    }
+  }
+]
