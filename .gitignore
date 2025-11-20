@@ -4,3 +4,7 @@ dist/
 *.log
 .DS_Store
 coverage/
+
+
+.github/instructions/kluster-code-verify.instructions.md
+.kluster

@@ -7,6 +7,8 @@ import emailRoutes from './routes/emailRoutes';
 import passwordRoutes from './routes/passwordRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import companyRoutes from './routes/companyRoutes';
+import metaRoutes from './routes/metaRoutes';
+import contractorUpdateRoutes from './routes/contractorUpdateRoutes';
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
 import logger from './utils/logger';
@@ -45,6 +47,8 @@ app.use('/api/email', emailRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/token', tokenRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/contractors/meta', metaRoutes);
+app.use('/api/contractor', contractorUpdateRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import {
   getAllCompanies,
-  getCompanyByName,
+  getCompanyById,
   searchCompanies,
-  getServicesByZip
-} from '../controllers/companyController';
+  createCompany,
+  updateCompany,
+  deleteCompany
+} from '../controllers/companyController-db';
 
 const router = Router();
 
@@ -55,44 +57,90 @@ router.get('/search', searchCompanies);
 
 /**
  * @swagger
- * /api/companies/zip/{zip}:
+ * /api/companies/{id}:
  *   get:
- *     summary: Get all services available in a zip code
+ *     summary: Get company by ID
  *     tags: [Companies]
  *     parameters:
  *       - in: path
- *         name: zip
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: Zip code
- *     responses:
- *       200:
- *         description: Services and companies in zip code
- *       404:
- *         description: No companies found
- */
-router.get('/zip/:zip', getServicesByZip);
-
-/**
- * @swagger
- * /api/companies/{name}:
- *   get:
- *     summary: Get company by name
- *     tags: [Companies]
- *     parameters:
- *       - in: path
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: Company name
+ *         description: Company ID
  *     responses:
  *       200:
  *         description: Company details
  *       404:
  *         description: Company not found
  */
-router.get('/:name', getCompanyByName);
+router.get('/:id', getCompanyById);
+
+/**
+ * @swagger
+ * /api/companies:
+ *   post:
+ *     summary: Create a new company
+ *     tags: [Companies]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *               tagline:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Company created successfully
+ */
+router.post('/', createCompany);
+
+/**
+ * @swagger
+ * /api/companies/{id}:
+ *   put:
+ *     summary: Update company by ID
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company updated successfully
+ */
+router.put('/:id', updateCompany);
+
+/**
+ * @swagger
+ * /api/companies/{id}:
+ *   delete:
+ *     summary: Delete company by ID
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company deleted successfully
+ */
+router.delete('/:id', deleteCompany);
 
 export default router;

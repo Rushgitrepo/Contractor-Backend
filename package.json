@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "migrate": "node -r ts-node/register src/database/migrate.ts",
     "migrate:fresh": "node scripts/create-db.js && npm run migrate",
+    "import:companies": "node -r ts-node/register src/database/importCompanies.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -32,6 +33,7 @@
     "morgan": "^1.10.0",
     "nodemailer": "^7.0.10",
     "pg": "^8.11.3",
+    "stripe": "^20.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
