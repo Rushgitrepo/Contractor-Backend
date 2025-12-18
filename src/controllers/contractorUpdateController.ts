@@ -35,6 +35,7 @@ export const getContractorProfile = async (req: Request, res: Response): Promise
       data: result.rows[0]
     });
   } catch (error) {
+    console.error('Get profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching profile',
@@ -69,11 +70,16 @@ export const updateContractorProfile = async (req: Request, res: Response): Prom
     
     // Build update query
     const allowedFields = [
-      'company_name', 'tagline', 'description', 'phone', 'email', 
-      'address', 'website', 'image_url', 'image_url_2', 'image_url_3',
+      'company_name', 'contact_name', 'tagline', 'description', 'phone', 'email', 
+      'address', 'website', 'video_call_link', 'image_url', 'image_url_2', 'image_url_3',
       'license_number', 'budget_range', 'years_in_business', 
       'employees_count', 'languages', 'services_offered', 'specialties', 
-      'service_cities', 'service_zip_codes', 'awards', 'certifications'
+      'service_areas', 'service_cities', 'service_zip_codes', 'awards', 'certifications',
+      'clients', 'reviews', 'verified_hires', 'reviews_count', 'rating',
+      'verified_business', 'responds_quickly', 'hired_on_platform',
+      'family_owned', 'eco_friendly', 'locally_owned', 'offers_custom_work',
+      'provides_3d_visualization', 'professional_category',
+      'featured_reviewer_name', 'featured_review_text', 'featured_review_rating'
     ];
     
     const updateFields: string[] = [];
@@ -83,7 +89,14 @@ export const updateContractorProfile = async (req: Request, res: Response): Prom
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
         updateFields.push(`${field} = $${paramCount}`);
-        values.push(updates[field]);
+        
+        // Convert reviews to JSONB if it's the reviews field
+        if (field === 'reviews' && updates[field]) {
+          values.push(JSON.stringify(updates[field]));
+        } else {
+          values.push(updates[field]);
+        }
+        
         paramCount++;
       }
     }
@@ -96,7 +109,7 @@ export const updateContractorProfile = async (req: Request, res: Response): Prom
       return;
     }
     
-    updateFields.push(`last_updated_by_contractor = NOW()`);
+    updateFields.push(`updated_at = NOW()`);
     values.push(companyId);
     
     const query = `
