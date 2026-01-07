@@ -1,4 +1,5 @@
 import app from './app';
+// server restart trigger
 import pool from './config/database';
 import { config } from './config';
 import { setupSwagger } from './swagger';

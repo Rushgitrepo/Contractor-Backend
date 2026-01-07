@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 
 // Rate limiter for authentication endpoints
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1000, // 15 minutes
   max: 5, // 5 requests per window
   message: {
     success: false,
@@ -14,7 +14,7 @@ export const authLimiter = rateLimit({
 
 // Rate limiter for general API endpoints
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1000, // 15 minutes
   max: 100, // 100 requests per window
   message: {
     success: false,

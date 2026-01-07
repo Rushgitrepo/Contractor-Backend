@@ -7,7 +7,7 @@ export const config = {
   port: parseInt(process.env.PORT || '5000'),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-  
+
   // Database
   database: {
     host: process.env.DB_HOST || 'localhost',
@@ -16,7 +16,7 @@ export const config = {
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
   },
-  
+
   // JWT
   jwt: {
     secret: process.env.JWT_SECRET || 'your_secret_key',
@@ -24,17 +24,24 @@ export const config = {
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your_refresh_secret',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRE || '7d', // Long-lived refresh token
   },
-  
+
   // Email
   email: {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || '587'),
-    user: process.env.EMAIL_USER || '',
-    password: process.env.EMAIL_PASSWORD || '',
-    from: process.env.EMAIL_FROM || 'noreply@contractorlist.com',
-    fromName: process.env.EMAIL_FROM_NAME || 'ContractorList',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    user: process.env.SMTP_USER || '',
+    password: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || 'noreply@contractorlist.com',
+    fromName: process.env.SMTP_FROM_NAME || 'ContractorList',
   },
-  
+
+  // SMS
+  sms: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+    authToken: process.env.TWILIO_AUTH_TOKEN || '',
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+  },
+
   // CORS
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',

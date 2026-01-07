@@ -19,9 +19,9 @@ export const getAllServices = async (req: Request, res: Response): Promise<void>
       WHERE services_offered IS NOT NULL
       ORDER BY service
     `);
-    
+
     const services = result.rows.map(row => row.service);
-    
+
     res.status(200).json({
       success: true,
       count: services.length,
@@ -45,9 +45,9 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
       WHERE professional_category IS NOT NULL
       ORDER BY category
     `);
-    
+
     const categories = result.rows.map(row => row.category);
-    
+
     res.status(200).json({
       success: true,
       count: categories.length,
@@ -71,9 +71,9 @@ export const getAllZipCodes = async (req: Request, res: Response): Promise<void>
       WHERE service_zip_codes IS NOT NULL
       ORDER BY zip_code
     `);
-    
+
     const zipCodes = result.rows.map(row => row.zip_code).filter(zip => zip !== 'N/A');
-    
+
     res.status(200).json({
       success: true,
       count: zipCodes.length,
@@ -97,9 +97,9 @@ export const getAllCities = async (req: Request, res: Response): Promise<void> =
       WHERE service_cities IS NOT NULL
       ORDER BY city
     `);
-    
+
     const cities = result.rows.map(row => row.city);
-    
+
     res.status(200).json({
       success: true,
       count: cities.length,
