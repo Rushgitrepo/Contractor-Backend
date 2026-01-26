@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "migrate": "node -r ts-node/register src/database/migrate.ts",
     "migrate:fresh": "node scripts/create-db.js && npm run migrate",
-    "import:companies": "node -r ts-node/register src/database/importCompanies.ts",
+    "import:companies": "node -r ts-node/register src/database/addNewCompanies.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
