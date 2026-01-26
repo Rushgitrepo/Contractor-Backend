@@ -306,19 +306,21 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
     const emailSent = await sendVerificationEmail(email, code);
 
     if (!emailSent) {
+      logger.error(`[Auth] Failed to send verification email to: ${email}`);
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Failed to send verification email'
       });
     }
 
+    logger.info(`[Auth] Verification code sent to: ${email}`);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: `Verification code sent to ${email}`
     });
 
   } catch (error) {
-    console.error('Send OTP error:', error);
+    logger.error('[Auth] Send OTP error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: MESSAGES.SERVER_ERROR
@@ -338,6 +340,8 @@ export const verifyEmailOtp = async (req: Request, res: Response) => {
       });
     }
 
+    logger.info(`[Auth] Verifying OTP for: ${email}`);
+
     // Check DB for valid code
     const result = await pool.query(
       `SELECT * FROM verification_codes 
@@ -347,19 +351,21 @@ export const verifyEmailOtp = async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
+      logger.warn(`[Auth] Invalid or expired OTP for: ${email}`);
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: 'Invalid or expired verification code'
       });
     }
 
+    logger.info(`[Auth] OTP verified successfully for: ${email}`);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Email verified successfully'
     });
 
   } catch (error) {
-    console.error('Verify OTP error:', error);
+    logger.error('[Auth] Verify OTP error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: MESSAGES.SERVER_ERROR
