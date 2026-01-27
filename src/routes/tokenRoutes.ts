@@ -7,8 +7,6 @@ const router = Router();
 
 router.post(
   '/refresh',
-  [body('refreshToken').notEmpty().withMessage('Refresh token is required')],
-  handleValidationErrors,
   refreshToken
 );
 

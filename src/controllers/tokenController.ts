@@ -7,9 +7,9 @@ import logger from '../utils/logger';
 // Refresh access token
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    const oldRefreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) {
+    if (!oldRefreshToken) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: 'Refresh token is required',
@@ -17,7 +17,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
+    const decoded = verifyRefreshToken(oldRefreshToken);
 
     if (decoded.type !== 'refresh') {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -26,18 +26,41 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if refresh token exists in database
+    // Check if refresh token exists in database (detection for reuse)
     const tokenResult = await pool.query(
       'SELECT * FROM refresh_tokens WHERE token = $1 AND user_id = $2 AND expires_at > NOW()',
-      [refreshToken, decoded.id]
+      [oldRefreshToken, decoded.id]
     );
 
     if (tokenResult.rows.length === 0) {
+      // Token not found in DB - could be:
+      // 1. Already used (rotation)
+      // 2. Manually deleted (logout)
+      // 3. Expired
+      // Only log if this seems like actual reuse (token is valid but not in DB)
+
+      // Check if there are ANY tokens for this user
+      const userTokensResult = await pool.query(
+        'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1',
+        [decoded.id]
+      );
+
+      const hasOtherTokens = parseInt(userTokensResult.rows[0]?.count || '0') > 0;
+
+      if (hasOtherTokens) {
+        // User has other valid tokens, so this one was likely already used
+        logger.warn(`Potential refresh token reuse detected for user ID: ${decoded.id}`);
+      }
+      // If user has no tokens at all, they're logged out - don't spam logs
+
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: 'Invalid or expired refresh token',
       });
     }
+
+    // Delete the old token (rotation)
+    await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [oldRefreshToken]);
 
     // Get user details
     const userResult = await pool.query(
@@ -56,15 +79,34 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     // Generate new access token
     const newAccessToken = generateToken(user.id, user.email, user.role);
+    // Generate new refresh token (ROTATION)
+    const newRefreshToken = generateRefreshToken(user.id);
 
-    logger.info(`Access token refreshed for user: ${user.email}`);
+    // Save new refresh token to database
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await pool.query(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, newRefreshToken, expiresAt]
+    );
+
+    logger.info(`Access token rotated for user: ${user.email}`);
+
+    // Set Cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/', // Make accessible on all paths
+    };
+
+    res.cookie('token', newAccessToken, cookieOptions);
+    res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Token refreshed successfully',
-      data: {
-        accessToken: newAccessToken,
-      },
+      data: {},
     });
   } catch (error) {
     logger.error('Refresh token error:', error);
@@ -78,12 +120,20 @@ export const refreshToken = async (req: Request, res: Response) => {
 // Logout (invalidate refresh token)
 export const logout = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken;
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+    };
 
     if (refreshToken) {
-      // Delete refresh token from database
       await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
     }
+
+    res.clearCookie('token', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

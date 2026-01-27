@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, getProfile, register, checkEmail, sendEmailOtp, verifyEmailOtp, sendSmsOtp, verifySmsOtp } from '../controllers/authController';
+import { login, getProfile, register, checkEmail, sendEmailOtp, verifyEmailOtp, sendSmsOtp, verifySmsOtp, logout } from '../controllers/authController';
 import {
   validateLogin,
   handleValidationErrors,
@@ -17,6 +17,7 @@ router.post('/verify-email-otp', authLimiter, verifyEmailOtp);
 router.post('/send-sms-otp', authLimiter, sendSmsOtp);
 router.post('/verify-sms-otp', authLimiter, verifySmsOtp);
 router.post('/login', authLimiter, validateLogin, handleValidationErrors, login);
+router.post('/logout', logout);
 router.get('/profile', authenticate, getProfile);
 
 export default router;

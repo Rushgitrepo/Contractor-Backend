@@ -21,7 +21,7 @@ CREATE TABLE users (
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('client', 'contractor', 'vendor', 'admin')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('client', 'general-contractor', 'subcontractor', 'vendor', 'admin')),
   phone VARCHAR(50),
   is_verified BOOLEAN DEFAULT FALSE,
   verification_token VARCHAR(500),

@@ -16,18 +16,26 @@ export const authenticate = (
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    let token;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check for token in cookies first (Production/Best Practice)
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+    // Fallback to Authorization header
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.substring(7);
+    }
+
+    if (!token) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: MESSAGES.UNAUTHORIZED,
       });
     }
 
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
-    
+
     req.user = decoded;
     next();
   } catch (error) {

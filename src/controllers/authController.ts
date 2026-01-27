@@ -29,8 +29,10 @@ export const register = async (req: Request, res: Response) => {
   const email = (req.body.email || '').trim().toLowerCase();
 
   // Map workType to system role
-  let systemRole: 'client' | 'contractor' | 'vendor' = 'client';
-  if (workType === 'general-contractor' || workType === 'subcontractor') systemRole = 'contractor';
+  // Explicitly mapping to distinct roles now, instead of generic 'contractor'
+  let systemRole: 'client' | 'general-contractor' | 'subcontractor' | 'vendor' = 'client';
+  if (workType === 'general-contractor') systemRole = 'general-contractor';
+  if (workType === 'subcontractor') systemRole = 'subcontractor';
   if (workType === 'supplier') systemRole = 'vendor';
 
   // Start transaction
@@ -107,6 +109,18 @@ export const register = async (req: Request, res: Response) => {
 
     logger.info(`User registered successfully: ${email} [ID: ${userId}]`);
 
+    // Cookie Options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    };
+
+    // Set Cookies
+    res.cookie('token', token, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: MESSAGES.REGISTRATION_SUCCESS || 'Registration successful',
@@ -122,9 +136,7 @@ export const register = async (req: Request, res: Response) => {
           is_verified: false,
           created_at: new Date(),
           updated_at: new Date()
-        },
-        token,
-        refreshToken
+        }
       }
     });
 
@@ -184,6 +196,18 @@ export const login = async (req: Request, res: Response) => {
       [user.id, refreshToken, expiresAt]
     );
 
+    // Cookie Options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    };
+
+    // Set Cookies
+    res.cookie('token', token, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
@@ -192,8 +216,9 @@ export const login = async (req: Request, res: Response) => {
       message: MESSAGES.LOGIN_SUCCESS,
       data: {
         user: userWithoutPassword,
-        token,
-        refreshToken,
+        // We can optionally omit token/refreshToken from body now, 
+        // but keeping them for now doesn't hurt, just redundant.
+        // The frontend will rely on cookies.
       },
     });
   } catch (error) {
@@ -203,6 +228,25 @@ export const login = async (req: Request, res: Response) => {
       message: MESSAGES.SERVER_ERROR,
     });
   }
+};
+
+export const logout = (req: Request, res: Response) => {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+  };
+
+  res.clearCookie('token', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+
+  // Also optionally handle DB token invalidation
+  // TODO: find and delete the refresh token from the database if necessary
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };
 
 export const getProfile = async (req: Request, res: Response) => {
@@ -293,7 +337,8 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
 
     // Generate 6 digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiryMinutes = parseInt(process.env.EMAIL_VERIFICATION_EXPIRY_MINUTES || '10');
+    const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
 
     // Save to DB
     await pool.query(
@@ -386,7 +431,8 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
 
     // Generate 6 digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiryMinutes = parseInt(process.env.SMS_VERIFICATION_EXPIRY_MINUTES || '10');
+    const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
 
     // Save to DB
     await pool.query(
