@@ -33,9 +33,26 @@ export const refreshToken = async (req: Request, res: Response) => {
     );
 
     if (tokenResult.rows.length === 0) {
-      // Possible token reuse or compromise
-      // In a real production app, we might want to invalidate all tokens for this user
-      logger.warn(`Potential refresh token reuse detected for user ID: ${decoded.id}`);
+      // Token not found in DB - could be:
+      // 1. Already used (rotation)
+      // 2. Manually deleted (logout)
+      // 3. Expired
+      // Only log if this seems like actual reuse (token is valid but not in DB)
+
+      // Check if there are ANY tokens for this user
+      const userTokensResult = await pool.query(
+        'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1',
+        [decoded.id]
+      );
+
+      const hasOtherTokens = parseInt(userTokensResult.rows[0]?.count || '0') > 0;
+
+      if (hasOtherTokens) {
+        // User has other valid tokens, so this one was likely already used
+        logger.warn(`Potential refresh token reuse detected for user ID: ${decoded.id}`);
+      }
+      // If user has no tokens at all, they're logged out - don't spam logs
+
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: 'Invalid or expired refresh token',
