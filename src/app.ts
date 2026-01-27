@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import authRoutes from './routes/authRoutes';
@@ -28,6 +29,9 @@ app.use(
 
 // Logging
 app.use(morgan('dev'));
+
+// Cookie parser middleware
+app.use(cookieParser());
 
 // Body parser
 app.use(express.json());
