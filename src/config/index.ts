@@ -46,4 +46,15 @@ export const config = {
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
+
+  // Rate Limiting
+  rateLimit: {
+    passwordResetWindowMinutes: parseInt(process.env.PASSWORD_RESET_WINDOW_MINUTES || '60'),
+    passwordResetMaxAttempts: parseInt(process.env.PASSWORD_RESET_MAX_ATTEMPTS || '3'),
+  },
+
+  // Security
+  security: {
+    passwordResetTokenExpiryMinutes: parseInt(process.env.PASSWORD_RESET_TOKEN_EXPIRY_MINUTES || '60'),
+  },
 } as const;

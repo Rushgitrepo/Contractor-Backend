@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import { config } from '../config';
 import { hashPassword } from '../utils/password';
 import { generatePasswordResetToken, verifyToken } from '../utils/jwt';
 import { sendPasswordResetEmail } from '../utils/email';
@@ -12,7 +13,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     const result = await pool.query(
-      'SELECT id, name, email FROM users WHERE email = $1',
+      'SELECT id, first_name, email FROM users WHERE email = $1',
       [email]
     );
 
@@ -28,7 +29,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Generate reset token
     const token = generatePasswordResetToken(user.id, user.email);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const retryMinutes = config.security.passwordResetTokenExpiryMinutes;
+    const expiresAt = new Date(Date.now() + retryMinutes * 60 * 1000);
 
     // Save token to database
     await pool.query(
@@ -37,7 +39,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     );
 
     // Send email
-    await sendPasswordResetEmail(user.email, user.name, token);
+    await sendPasswordResetEmail(user.email, user.first_name, token);
 
     logger.info(`Password reset email sent to: ${email}`);
 
@@ -45,11 +47,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
       success: true,
       message: 'If the email exists, a password reset link has been sent',
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Forgot password error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: MESSAGES.SERVER_ERROR,
+      message: `Error: ${error.message || error}`,
     });
   }
 };
