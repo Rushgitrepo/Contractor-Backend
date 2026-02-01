@@ -11,6 +11,7 @@ import metaRoutes from './routes/metaRoutes';
 import contractorUpdateRoutes from './routes/contractorUpdateRoutes';
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
+import { setupSwagger } from './swagger';
 import logger from './utils/logger';
 
 const app = express();
@@ -43,6 +44,9 @@ app.use('/api/', apiLimiter);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
+
+// Setup Swagger documentation
+setupSwagger(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
