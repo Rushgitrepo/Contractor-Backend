@@ -32,10 +32,10 @@ export const sendVerificationEmail = async (
 
   const verificationUrl = `${config.frontendUrl}/verify-email?token=${token}`;
 
-  console.log('📧 SENDING VERIFICATION EMAIL:');
-  console.log('   FROM:', config.email.from);
-  console.log('   TO:', email);  // ← This shows the REAL recipient
-  console.log('   URL:', verificationUrl);
+  console.log('SENDING VERIFICATION EMAIL:');
+  console.log('FROM:', config.email.from);
+  console.log('TO:', email);  // ← This shows the REAL recipient
+  console.log('URL:', verificationUrl);
 
   try {
     await transporter.sendMail({

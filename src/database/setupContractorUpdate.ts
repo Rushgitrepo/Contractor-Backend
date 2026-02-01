@@ -16,10 +16,10 @@ async function setupContractorUpdate() {
   const client = await pool.connect();
   
   try {
-    console.log('🚀 Setting up contractor update system...\n');
+    console.log('Setting up contractor update system...\n');
     
     // Step 1: Add token columns
-    console.log('📝 Adding token columns...');
+    console.log('Adding token columns...');
     await client.query(`
       ALTER TABLE companies 
       ADD COLUMN IF NOT EXISTS update_token VARCHAR(255) UNIQUE,
@@ -28,10 +28,10 @@ async function setupContractorUpdate() {
       
       CREATE INDEX IF NOT EXISTS idx_companies_token ON companies(update_token);
     `);
-    console.log('✅ Columns added\n');
+    console.log('Columns added\n');
     
     // Step 2: Generate tokens for all contractors
-    console.log('📝 Generating unique tokens...');
+    console.log('Generating unique tokens...');
     const result = await client.query('SELECT id, company_name, email FROM companies ORDER BY id');
     
     const contractors = [];
@@ -56,10 +56,10 @@ async function setupContractorUpdate() {
       });
     }
     
-    console.log(`✅ Generated ${contractors.length} tokens\n`);
+    console.log(`Generated ${contractors.length} tokens\n`);
     
     // Step 3: Export for n8n
-    console.log('📝 Exporting data for n8n...');
+    console.log('Exporting data for n8n...');
     const outputPath = path.join(process.cwd(), 'contractor-update-links.json');
     fs.writeFileSync(outputPath, JSON.stringify(contractors, null, 2));
     
@@ -70,23 +70,23 @@ async function setupContractorUpdate() {
     ).join('\n');
     fs.writeFileSync(csvPath, csvHeader + csvRows);
     
-    console.log(`✅ Exported to: ${outputPath}`);
-    console.log(`✅ CSV exported to: ${csvPath}\n`);
+    console.log(`Exported to: ${outputPath}`);
+    console.log(`CSV exported to: ${csvPath}\n`);
     
-    console.log('📋 Sample links (first 3):');
+    console.log('Sample links (first 3):');
     contractors.slice(0, 3).forEach(c => {
       console.log(`\n  ${c.company_name}`);
       console.log(`  Email: ${c.email}`);
       console.log(`  Link: ${c.update_link}`);
     });
     
-    console.log('\n\n🎯 NEXT STEPS:');
+    console.log('\n\nNEXT STEPS:');
     console.log('1. Use contractor-update-links.json in your n8n workflow');
     console.log('2. n8n will send emails with the update_link for each contractor');
     console.log('3. Contractors click link → update their info → database updates automatically');
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     throw error;
   } finally {
     client.release();
@@ -96,10 +96,10 @@ async function setupContractorUpdate() {
 
 setupContractorUpdate()
   .then(() => {
-    console.log('\n🎉 Setup completed!');
+    console.log('\nSetup completed!');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('💥 Failed:', error);
+    console.error('Failed:', error);
     process.exit(1);
   });

@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import authRoutes from './routes/authRoutes';
 import emailRoutes from './routes/emailRoutes';
-// import passwordRoutes from './routes/passwordRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import companyRoutes from './routes/companyRoutes';
 import metaRoutes from './routes/metaRoutes';
@@ -37,8 +36,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Apply rate limiting to all routes (temporarily disabled for testing)
-// app.use('/api/', apiLimiter);
+// Apply rate limiting to all routes
+app.use('/api/', apiLimiter);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -48,8 +47,6 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/email', emailRoutes);
-// import passwordRoutes from './routes/passwordRoutes'; // Removed, merged into authRoutes
-// app.use('/api/password', passwordRoutes);
 app.use('/api/token', tokenRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/contractors/meta', metaRoutes);

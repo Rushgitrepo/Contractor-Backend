@@ -6,7 +6,7 @@ export const generateToken = (userId: number, email: string, role: string): stri
   return jwt.sign(
     { id: userId, email, role },
     config.jwt.secret,
-    { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
+    { expiresIn: config.jwt.accessExpiresIn } as jwt.SignOptions
   );
 };
 
@@ -42,7 +42,7 @@ export const generateEmailVerificationToken = (userId: number, email: string): s
   return jwt.sign(
     { id: userId, email, type: 'email_verification' },
     config.jwt.secret,
-    { expiresIn: '24h' } as jwt.SignOptions
+    { expiresIn: config.jwt.emailVerificationExpiresIn } as jwt.SignOptions
   );
 };
 
@@ -51,6 +51,7 @@ export const generatePasswordResetToken = (userId: number, email: string): strin
   return jwt.sign(
     { id: userId, email, type: 'password_reset' },
     config.jwt.secret,
-    { expiresIn: '1h' } as jwt.SignOptions
+    { expiresIn: config.jwt.passwordResetExpiresIn } as jwt.SignOptions
   );
 };
+

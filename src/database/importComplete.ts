@@ -15,10 +15,10 @@ async function importComplete() {
   const client = await pool.connect();
   
   try {
-    console.log('🚀 Creating complete single-table database...\n');
+    console.log('Creating complete single-table database...\n');
     
     // Drop all tables
-    console.log('📝 Dropping all tables...');
+    console.log('Dropping all tables...');
     await client.query(`
       DROP TABLE IF EXISTS company_images CASCADE;
       DROP TABLE IF EXISTS company_reviews CASCADE;
@@ -29,10 +29,10 @@ async function importComplete() {
       DROP TABLE IF EXISTS services_offered CASCADE;
       DROP TABLE IF EXISTS companies CASCADE;
     `);
-    console.log('✅ Tables dropped\n');
+    console.log('Tables dropped\n');
     
     // Create ONE companies table with ALL data
-    console.log('📝 Creating single companies table with all data...');
+    console.log('Creating single companies table with all data...');
     await client.query(`
       CREATE TABLE companies (
         id SERIAL PRIMARY KEY,
@@ -106,17 +106,17 @@ async function importComplete() {
       CREATE INDEX idx_companies_cities ON companies USING GIN(service_cities);
       CREATE INDEX idx_companies_zip_codes ON companies USING GIN(service_zip_codes);
     `);
-    console.log('✅ Single table created\n');
+    console.log('Single table created\n');
     
     // Read JSON file
-    console.log('📝 Reading companies.json...');
+    console.log('Reading companies.json...');
     const jsonPath = path.join(__dirname, '../data/companies.json');
     const jsonData = fs.readFileSync(jsonPath, 'utf-8');
     const companies = JSON.parse(jsonData);
-    console.log(`✅ Found ${companies.length} companies\n`);
+    console.log(`Found ${companies.length} companies\n`);
     
     // Import companies
-    console.log('📝 Importing all data into single table...');
+    console.log('Importing all data into single table...');
     let successCount = 0;
     
     for (let i = 0; i < companies.length; i++) {
@@ -308,18 +308,18 @@ async function importComplete() {
       }
     }
     
-    console.log(`\n✅ Successfully imported ${successCount} out of ${companies.length} companies!\n`);
+    console.log(`\nSuccessfully imported ${successCount} out of ${companies.length} companies!\n`);
     
     // Verify
     const result = await client.query('SELECT COUNT(*) FROM companies');
-    console.log(`📊 Total companies in database: ${result.rows[0].count}\n`);
+    console.log(`Total companies in database: ${result.rows[0].count}\n`);
     
-    console.log('✅ ALL DATA IN ONE TABLE!');
+    console.log('ALL DATA IN ONE TABLE!');
     console.log('   Run: SELECT * FROM companies;');
     console.log('   Everything (phone, email, images, services, awards, etc.) is in one row!\n');
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     throw error;
   } finally {
     client.release();
@@ -329,10 +329,10 @@ async function importComplete() {
 
 importComplete()
   .then(() => {
-    console.log('🎉 Complete import finished!');
+    console.log('Complete import finished!');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('💥 Failed:', error);
+    console.error('Failed:', error);
     process.exit(1);
   });

@@ -2,7 +2,9 @@ import { Request, Response } from 'express';
 import pool from '../config/database';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { HTTP_STATUS, MESSAGES } from '../constants';
+import { config } from '../config';
 import logger from '../utils/logger';
+
 
 // Refresh access token
 export const refreshToken = async (req: Request, res: Response) => {
@@ -83,22 +85,24 @@ export const refreshToken = async (req: Request, res: Response) => {
     const newRefreshToken = generateRefreshToken(user.id);
 
     // Save new refresh token to database
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const refreshTokenExpiry = new Date(Date.now() + config.auth.refreshTokenExpiryDays * 24 * 60 * 60 * 1000);
     await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-      [user.id, newRefreshToken, expiresAt]
+      [user.id, newRefreshToken, refreshTokenExpiry]
     );
+
 
     logger.info(`Access token rotated for user: ${user.email}`);
 
     // Set Cookies
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: config.cookies.secure,
+      sameSite: config.cookies.sameSite,
+      maxAge: config.cookies.maxAgeDays * 24 * 60 * 60 * 1000,
       path: '/', // Make accessible on all paths
     };
+
 
     res.cookie('token', newAccessToken, cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
@@ -124,9 +128,10 @@ export const logout = async (req: Request, res: Response) => {
 
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+      secure: config.cookies.secure,
+      sameSite: config.cookies.sameSite,
     };
+
 
     if (refreshToken) {
       await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
