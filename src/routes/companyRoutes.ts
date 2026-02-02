@@ -5,10 +5,47 @@ import {
   searchCompanies,
   createCompany,
   updateCompany,
-  deleteCompany
+  deleteCompany,
+  getMyCompany,
+  updateMyCompany,
+  skipProfileReminder
 } from '../controllers/companyController-db';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/companies/me:
+ *   get:
+ *     summary: Get company for current user
+ *     tags: [Companies]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/me', authenticate, getMyCompany);
+
+/**
+ * @swagger
+ * /api/companies/me:
+ *   post:
+ *     summary: Update company for current user
+ *     tags: [Companies]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/me', authenticate, updateMyCompany);
+
+/**
+ * @swagger
+ * /api/companies/me/skip:
+ *   post:
+ *     summary: Skip profile completion reminder
+ *     tags: [Companies]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/me/skip', authenticate, skipProfileReminder);
 
 /**
  * @swagger
