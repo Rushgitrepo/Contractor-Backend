@@ -16,10 +16,10 @@ async function setupContractorUpdate() {
   const client = await pool.connect();
   
   try {
-    console.log('🚀 Setting up contractor update system...\n');
+    console.log('Setting up contractor update system...\n');
     
     // Step 1: Add token columns
-    console.log('📝 Adding token columns...');
+    console.log('Adding token columns...');
     await client.query(`
       ALTER TABLE companies 
       ADD COLUMN IF NOT EXISTS update_token VARCHAR(255) UNIQUE,
@@ -28,10 +28,10 @@ async function setupContractorUpdate() {
       
       CREATE INDEX IF NOT EXISTS idx_companies_token ON companies(update_token);
     `);
-    console.log('✅ Columns added\n');
+    console.log('Columns added\n');
     
     // Step 2: Generate tokens for all contractors
-    console.log('📝 Generating unique tokens...');
+    console.log('Generating unique tokens...');
     const result = await client.query('SELECT id, company_name, email FROM companies ORDER BY id');
     
     const contractors = [];
@@ -56,10 +56,10 @@ async function setupContractorUpdate() {
       });
     }
     
-    console.log(`✅ Generated ${contractors.length} tokens\n`);
+    console.log(`Generated ${contractors.length} tokens\n`);
     
     // Step 3: Export for n8n
-    console.log('📝 Exporting data for n8n...');
+    console.log('Exporting data for n8n...');
     const outputPath = path.join(process.cwd(), 'contractor-update-links.json');
     fs.writeFileSync(outputPath, JSON.stringify(contractors, null, 2));
     
