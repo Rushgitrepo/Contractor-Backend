@@ -3,11 +3,11 @@ import { config } from '../config';
 
 // Rate limiter for authentication endpoints
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 requests per window
+  windowMs: config.rateLimit.authWindowMinutes * 60 * 1000,
+  max: config.rateLimit.authMaxAttempts,
   message: {
     success: false,
-    message: 'Too many login attempts, please try again after 15 minutes',
+    message: `Too many login attempts, please try again after ${config.rateLimit.authWindowMinutes} minutes`,
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -15,8 +15,8 @@ export const authLimiter = rateLimit({
 
 // Rate limiter for general API endpoints
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  windowMs: config.rateLimit.apiWindowMinutes * 60 * 1000,
+  max: config.rateLimit.apiMaxAttempts,
   message: {
     success: false,
     message: 'Too many requests, please try again later',
@@ -25,17 +25,15 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const passwordResetWindowMinutes = config.rateLimit.passwordResetWindowMinutes;
-const passwordResetMax = config.rateLimit.passwordResetMaxAttempts;
-
 // Rate limiter for password reset
 export const passwordResetLimiter = rateLimit({
-  windowMs: passwordResetWindowMinutes * 60 * 1000,
-  max: passwordResetMax,
+  windowMs: config.rateLimit.passwordResetWindowMinutes * 60 * 1000,
+  max: config.rateLimit.passwordResetMaxAttempts,
   message: {
     success: false,
-    message: `Too many password reset attempts, please try again after ${passwordResetWindowMinutes} minutes`,
+    message: `Too many password reset attempts, please try again after ${config.rateLimit.passwordResetWindowMinutes} minutes`,
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
+

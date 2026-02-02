@@ -32,7 +32,7 @@ async function importComplete() {
     console.log('Tables dropped\n');
     
     // Create ONE companies table with ALL data
-    console.log('📝 Creating single companies table with all data...');
+    console.log('Creating single companies table with all data...');
     await client.query(`
       CREATE TABLE companies (
         id SERIAL PRIMARY KEY,

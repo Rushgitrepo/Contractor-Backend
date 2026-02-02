@@ -70,23 +70,23 @@ async function setupContractorUpdate() {
     ).join('\n');
     fs.writeFileSync(csvPath, csvHeader + csvRows);
     
-    console.log(`✅ Exported to: ${outputPath}`);
-    console.log(`✅ CSV exported to: ${csvPath}\n`);
+    console.log(`Exported to: ${outputPath}`);
+    console.log(`CSV exported to: ${csvPath}\n`);
     
-    console.log('📋 Sample links (first 3):');
+    console.log('Sample links (first 3):');
     contractors.slice(0, 3).forEach(c => {
       console.log(`\n  ${c.company_name}`);
       console.log(`  Email: ${c.email}`);
       console.log(`  Link: ${c.update_link}`);
     });
     
-    console.log('\n\n🎯 NEXT STEPS:');
+    console.log('\n\nNEXT STEPS:');
     console.log('1. Use contractor-update-links.json in your n8n workflow');
     console.log('2. n8n will send emails with the update_link for each contractor');
     console.log('3. Contractors click link → update their info → database updates automatically');
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     throw error;
   } finally {
     client.release();
@@ -96,10 +96,10 @@ async function setupContractorUpdate() {
 
 setupContractorUpdate()
   .then(() => {
-    console.log('\n🎉 Setup completed!');
+    console.log('\nSetup completed!');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('💥 Failed:', error);
+    console.error('Failed:', error);
     process.exit(1);
   });

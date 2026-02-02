@@ -16,22 +16,22 @@ async function addNewCompanies() {
   const client = await pool.connect();
 
   try {
-    console.log('🚀 Adding new companies to database...\n');
+    console.log('Adding new companies to database...\n');
 
     // Read JSON file
-    console.log('📝 Reading companies.json...');
+    console.log('Reading companies.json...');
     const jsonPath = path.join(__dirname, '../data/companies.json');
     const jsonData = fs.readFileSync(jsonPath, 'utf-8');
     const companies = JSON.parse(jsonData);
-    console.log(`✅ Found ${companies.length} companies in file\n`);
+    console.log(`Found ${companies.length} companies in file\n`);
 
     // Get existing companies count
     const countResult = await client.query('SELECT COUNT(*) FROM companies');
     const existingCount = parseInt(countResult.rows[0].count);
-    console.log(`📊 Existing companies in DB: ${existingCount}\n`);
+    console.log(`Existing companies in DB: ${existingCount}\n`);
 
     // Import only NEW companies
-    console.log('📝 Adding new companies...');
+    console.log('Adding new companies...');
     let successCount = 0;
     let skippedCount = 0;
 
@@ -147,15 +147,15 @@ async function addNewCompanies() {
       }
     }
 
-    console.log(`\n✅ Successfully added ${successCount} new companies!`);
-    console.log(`⏭️  Skipped ${skippedCount} existing companies\n`);
+    console.log(`\nSuccessfully added ${successCount} new companies!`);
+    console.log(`Skipped ${skippedCount} existing companies\n`);
 
     // Verify
     const finalResult = await client.query('SELECT COUNT(*) FROM companies');
-    console.log(`📊 Total companies in database: ${finalResult.rows[0].count}\n`);
+    console.log(`Total companies in database: ${finalResult.rows[0].count}\n`);
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     throw error;
   } finally {
     client.release();
@@ -165,10 +165,10 @@ async function addNewCompanies() {
 
 addNewCompanies()
   .then(() => {
-    console.log('🎉 New companies added successfully!');
+    console.log('New companies added successfully!');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('💥 Failed:', error);
+    console.error('Failed:', error);
     process.exit(1);
   });

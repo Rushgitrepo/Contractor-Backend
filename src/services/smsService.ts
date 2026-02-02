@@ -30,6 +30,7 @@ export const sendSms = async (to: string, body: string) => {
 };
 
 export const sendVerificationSms = async (to: string, code: string) => {
-    const message = `Your ContractorList verification code is: ${code}. Valid for 10 minutes.`;
+    const message = `Your ContractorList verification code is: ${code}. Valid for ${config.auth.smsOtpExpiryMinutes} minutes.`;
     return sendSms(to, message);
 };
+

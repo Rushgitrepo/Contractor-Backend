@@ -13,6 +13,8 @@ DROP TABLE IF EXISTS sub_contractor_profiles CASCADE;
 DROP TABLE IF EXISTS supplier_profiles CASCADE;
 DROP TABLE IF EXISTS client_profiles_legacy CASCADE;
 DROP TABLE IF EXISTS contractor_profiles_legacy CASCADE;
+DROP TABLE IF EXISTS verification_codes CASCADE;
+
 
 -- Create users table (Conventional name for Identity)
 CREATE TABLE users (
@@ -21,7 +23,7 @@ CREATE TABLE users (
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('client', 'general-contractor', 'subcontractor', 'vendor', 'admin')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('client', 'general-contractor', 'subcontractor', 'supplier', 'admin')),
   phone VARCHAR(50),
   is_verified BOOLEAN DEFAULT FALSE,
   verification_token VARCHAR(500),
@@ -40,7 +42,20 @@ CREATE TABLE refresh_tokens (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create verification_codes table
+CREATE TABLE verification_codes (
+  id SERIAL PRIMARY KEY,
+  identifier VARCHAR(255) NOT NULL, -- email or phone
+  type VARCHAR(50) NOT NULL CHECK (type IN ('email', 'sms')),
+  code VARCHAR(10) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_verification_identifier ON verification_codes(identifier);
+
 -- ============================================
+
 -- SPECIFIC PROFILE TABLES (New Registration)
 -- ============================================
 

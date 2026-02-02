@@ -14,7 +14,7 @@ const pool = new Pool({
 export const getAllCompanies = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 10;
+    const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
     const countResult = await pool.query('SELECT COUNT(*) FROM companies');
@@ -26,14 +26,16 @@ export const getAllCompanies = async (req: Request, res: Response): Promise<void
       ORDER BY rating DESC NULLS LAST
       LIMIT $1 OFFSET $2
     `, [limit, offset]);
-    
+
     res.status(200).json({
       success: true,
-      count: result.rows.length,
-      total: totalCompanies,
-      page: page,
-      totalPages: totalPages,
-      data: result.rows
+      data: result.rows,
+      pagination: {
+        totalItems: totalCompanies,
+        totalPages: totalPages,
+        currentPage: page,
+        itemsPerPage: limit
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -48,7 +50,7 @@ export const getAllCompanies = async (req: Request, res: Response): Promise<void
 export const getCompanyById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     const result = await pool.query(
       'SELECT * FROM companies WHERE id = $1',
       [id]
@@ -289,15 +291,19 @@ export const deleteCompany = async (req: Request, res: Response): Promise<void> 
 // Search companies
 export const searchCompanies = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { 
-      zip, 
-      service, 
-      city, 
+    const {
+      zip,
+      service,
+      city,
       rating,
       verified_license,
       responds_quickly,
       family_owned,
       eco_friendly,
+      hired_on_platform,
+      locally_owned,
+      offers_custom_work,
+      provides_3d_visualization,
       budget,
       language,
       professional_category
@@ -351,6 +357,11 @@ export const searchCompanies = async (req: Request, res: Response): Promise<void
       query += ` AND responds_quickly = true`;
     }
 
+    // Filter by hired on platform
+    if (hired_on_platform === 'true') {
+      query += ` AND hired_on_platform = true`;
+    }
+
     // Filter by family owned
     if (family_owned === 'true') {
       query += ` AND family_owned = true`;
@@ -359,6 +370,21 @@ export const searchCompanies = async (req: Request, res: Response): Promise<void
     // Filter by eco friendly
     if (eco_friendly === 'true') {
       query += ` AND eco_friendly = true`;
+    }
+
+    // Filter by locally owned
+    if (locally_owned === 'true') {
+      query += ` AND locally_owned = true`;
+    }
+
+    // Filter by offers custom work
+    if (offers_custom_work === 'true') {
+      query += ` AND offers_custom_work = true`;
+    }
+
+    // Filter by provides 3d visualization
+    if (provides_3d_visualization === 'true') {
+      query += ` AND provides_3d_visualization = true`;
     }
 
     // Filter by budget
@@ -385,7 +411,7 @@ export const searchCompanies = async (req: Request, res: Response): Promise<void
     query += ` ORDER BY rating DESC NULLS LAST`;
 
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 10;
+    const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
     // Get total count
@@ -402,11 +428,13 @@ export const searchCompanies = async (req: Request, res: Response): Promise<void
 
     res.status(200).json({
       success: true,
-      count: result.rows.length,
-      total: totalCompanies,
-      page: page,
-      totalPages: totalPages,
-      data: result.rows
+      data: result.rows,
+      pagination: {
+        totalItems: totalCompanies,
+        totalPages: totalPages,
+        currentPage: page,
+        itemsPerPage: limit
+      }
     });
   } catch (error) {
     console.error('Search error:', error);

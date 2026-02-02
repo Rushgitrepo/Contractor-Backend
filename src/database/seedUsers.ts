@@ -57,10 +57,11 @@ const users = [
         }
     },
     {
-        email: 'vendor@demo.com',
-        role: 'vendor',
+        email: 'supplier@demo.com',
+        role: 'supplier',
         firstName: 'Demo',
-        lastName: 'Vendor',
+        lastName: 'Supplier',
+
         profileTable: 'supplier_profiles',
         profileData: {
             company_name: 'Demo Supply Co',
@@ -80,7 +81,7 @@ const users = [
 
 const seed = async () => {
     try {
-        console.log('🌱 Starting user seeding...');
+        console.log('Starting user seeding...');
         const hashedPassword = await hashPassword('password123');
 
         for (const user of users) {
@@ -112,13 +113,13 @@ const seed = async () => {
             const query = `INSERT INTO ${user.profileTable} (${columns}) VALUES (${placeholders})`;
 
             await pool.query(query, [userId, ...values]);
-            console.log(`✅ Created user: ${user.email}`);
+            console.log(`Created user: ${user.email}`);
         }
 
-        console.log('✨ Seeding completed successfully!');
+        console.log('Seeding completed successfully!');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Seeding failed:', error);
+        console.error('Seeding failed:', error);
         process.exit(1);
     }
 };

@@ -4,7 +4,6 @@ import logger from '../utils/logger';
 import { config } from '../config';
 
 // Create reusable transporter object using the default SMTP transport
-// Create reusable transporter object using the default SMTP transport
 const createTransporter = () => {
     // Only use config, assuming config handles loading from env
     const { host, port, user, password: pass } = config.email;

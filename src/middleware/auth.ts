@@ -18,7 +18,7 @@ export const authenticate = (
   try {
     let token;
 
-    // Check for token in cookies first (Production/Best Practice)
+    // Check for token in cookies first
     if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     }

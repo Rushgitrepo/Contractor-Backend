@@ -42,7 +42,7 @@ export interface User { // Maps to 'users' table
   last_name: string;
   email: string;
   password: string;
-  role: 'client' | 'general-contractor' | 'subcontractor' | 'vendor' | 'admin';
+  role: 'client' | 'general-contractor' | 'subcontractor' | 'supplier' | 'admin';
   phone?: string;
   company?: string;
   is_verified: boolean;

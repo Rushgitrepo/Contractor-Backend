@@ -29,10 +29,10 @@ export const register = async (req: Request, res: Response) => {
 
   // Map workType to system role
   // Explicitly mapping to distinct roles now, instead of generic 'contractor'
-  let systemRole: 'client' | 'general-contractor' | 'subcontractor' | 'vendor' = 'client';
+  let systemRole: 'client' | 'general-contractor' | 'subcontractor' | 'supplier' = 'client';
   if (workType === 'general-contractor') systemRole = 'general-contractor';
   if (workType === 'subcontractor') systemRole = 'subcontractor';
-  if (workType === 'supplier') systemRole = 'vendor';
+  if (workType === 'supplier') systemRole = 'supplier';
 
   // Start transaction
   const client = await pool.connect();
@@ -92,17 +92,20 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // 5. Generate Tokens
-    // Force type casting or ensure generateToken accepts 'vendor' if updated, otherwise 'client'/'contractor' is safe if 'vendor' maps to something else in underlying function or if function is updated. 
+    // Force type casting or ensure generateToken accepts 'supplier' if updated, otherwise 'client'/'contractor' is safe if 'supplier' maps to something else in underlying function or if function is updated. 
     // Assuming generateToken handles string or updated type.
     const token = generateToken(userId, email, systemRole as any);
+
     const { generateRefreshToken } = require('../utils/jwt');
     const refreshToken = generateRefreshToken(userId);
 
     // 6. Save Refresh Token
+    const refreshTokenExpiry = new Date(Date.now() + config.auth.refreshTokenExpiryDays * 24 * 60 * 60 * 1000);
     await client.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-      [userId, refreshToken, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)] // 7 days
+      [userId, refreshToken, refreshTokenExpiry]
     );
+
 
     await client.query('COMMIT');
 
@@ -111,10 +114,11 @@ export const register = async (req: Request, res: Response) => {
     // Cookie Options
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: config.cookies.secure,
+      sameSite: config.cookies.sameSite,
+      maxAge: config.cookies.maxAgeDays * 24 * 60 * 60 * 1000
     };
+
 
     // Set Cookies
     res.cookie('token', token, cookieOptions);
@@ -189,19 +193,21 @@ export const login = async (req: Request, res: Response) => {
     const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token to database
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const refreshTokenExpiry = new Date(Date.now() + config.auth.refreshTokenExpiryDays * 24 * 60 * 60 * 1000);
     await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-      [user.id, refreshToken, expiresAt]
+      [user.id, refreshToken, refreshTokenExpiry]
     );
+
 
     // Cookie Options
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: config.cookies.secure,
+      sameSite: config.cookies.sameSite,
+      maxAge: config.cookies.maxAgeDays * 24 * 60 * 60 * 1000
     };
+
 
     // Set Cookies
     res.cookie('token', token, cookieOptions);
@@ -232,9 +238,10 @@ export const login = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax' | 'none',
+    secure: config.cookies.secure,
+    sameSite: config.cookies.sameSite,
   };
+
 
   res.clearCookie('token', cookieOptions);
   res.clearCookie('refreshToken', cookieOptions);
@@ -336,8 +343,9 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
 
     // Generate 6 digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryMinutes = parseInt(process.env.EMAIL_VERIFICATION_EXPIRY_MINUTES || '10');
+    const expiryMinutes = config.auth.emailOtpExpiryMinutes;
     const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
+
 
     // Save to DB
     await pool.query(
@@ -430,8 +438,9 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
 
     // Generate 6 digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryMinutes = parseInt(process.env.SMS_VERIFICATION_EXPIRY_MINUTES || '10');
+    const expiryMinutes = config.auth.smsOtpExpiryMinutes;
     const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
+
 
     // Save to DB
     await pool.query(
@@ -527,8 +536,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Generate reset token
     const token = generatePasswordResetToken(user.id, user.email);
-    const retryMinutes = config.security.passwordResetTokenExpiryMinutes;
+    const retryMinutes = config.auth.passwordResetTokenExpiryMinutes;
     const expiresAt = new Date(Date.now() + retryMinutes * 60 * 1000);
+
 
     // Save token to database
     await pool.query(
