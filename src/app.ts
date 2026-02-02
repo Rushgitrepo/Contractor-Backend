@@ -10,6 +10,7 @@ import tokenRoutes from './routes/tokenRoutes';
 import companyRoutes from './routes/companyRoutes';
 import metaRoutes from './routes/metaRoutes';
 import contractorUpdateRoutes from './routes/contractorUpdateRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
 import { setupSwagger } from './swagger';
@@ -61,6 +62,7 @@ app.use('/api/token', tokenRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/contractors/meta', metaRoutes);
 app.use('/api/contractor', contractorUpdateRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use((req, res) => {

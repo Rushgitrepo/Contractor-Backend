@@ -24,6 +24,21 @@ export const register = async (req: Request, res: Response) => {
     trades, goals
   } = req.body as RegisterRequest;
 
+  // Enforce at least one trade and one goal
+  if (!trades || !Array.isArray(trades) || trades.length === 0) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: 'At least one trade must be selected'
+    });
+  }
+
+  if (!goals || !Array.isArray(goals) || goals.length === 0) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: 'At least one goal must be selected'
+    });
+  }
+
   // Normalize email
   const email = (req.body.email || '').trim().toLowerCase();
 
