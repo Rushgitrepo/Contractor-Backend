@@ -14,7 +14,7 @@ export const MESSAGES = {
   // Success
   REGISTRATION_SUCCESS: 'User registered successfully. Please check your email to verify your account.',
   LOGIN_SUCCESS: 'Login successful',
-  
+
   // Errors
   USER_EXISTS: 'User with this email already exists',
   INVALID_CREDENTIALS: 'Invalid email or password',

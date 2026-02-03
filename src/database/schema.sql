@@ -254,3 +254,52 @@ CREATE INDEX idx_companies_category ON companies(professional_category);
 DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ============================================
+-- REAL-TIME MESSAGING
+-- ============================================
+
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS conversation_participants CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
+
+-- Conversations (Chat Rooms)
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255), -- Optional, useful for group chats or project topics
+  type VARCHAR(50) DEFAULT 'direct' CHECK (type IN ('direct', 'group', 'project')),
+  related_entity_id UUID, -- Optional link to Project ID or Bid ID
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Participants (Users in a conversation)
+CREATE TABLE conversation_participants (
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (conversation_id, user_id)
+);
+CREATE INDEX idx_cp_user ON conversation_participants(user_id);
+
+-- Messages
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT, -- Text message
+  attachments JSONB DEFAULT '[]', -- File URLs
+  message_type VARCHAR(50) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'system')),
+  is_read BOOLEAN DEFAULT FALSE, -- Simple read status (for 1:1)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX idx_messages_created ON messages(created_at);
+CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
