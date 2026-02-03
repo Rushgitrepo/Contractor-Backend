@@ -182,7 +182,7 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
 -- COMPANIES TABLES (Directory listing)
 -- ============================================
 
--- Drop existing companies table and potential leftovers
+-- Drop only old/unused tables (not companies table to preserve data)
 DROP TABLE IF EXISTS company_images CASCADE;
 DROP TABLE IF EXISTS company_reviews CASCADE;
 DROP TABLE IF EXISTS company_awards CASCADE;
@@ -190,10 +190,11 @@ DROP TABLE IF EXISTS company_certifications CASCADE;
 DROP TABLE IF EXISTS company_specialties CASCADE;
 DROP TABLE IF EXISTS service_areas CASCADE;
 DROP TABLE IF EXISTS services_offered CASCADE;
-DROP TABLE IF EXISTS companies CASCADE;
+-- NOTE: DO NOT DROP companies table - it contains data!
+-- DROP TABLE IF EXISTS companies CASCADE;
 
--- Create companies table with aggregated columns
-CREATE TABLE companies (
+-- Create companies table with aggregated columns (only if it doesn't exist)
+CREATE TABLE IF NOT EXISTS companies (
   id SERIAL PRIMARY KEY,
   company_name VARCHAR(500) NOT NULL,
   tagline TEXT,
@@ -244,13 +245,101 @@ CREATE TABLE companies (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_companies_name ON companies(company_name);
-CREATE INDEX idx_companies_rating ON companies(rating DESC);
-CREATE INDEX idx_companies_verified ON companies(verified_business);
-CREATE INDEX idx_companies_category ON companies(professional_category);
+-- Create indexes for better performance (only if they don't exist)
+CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(company_name);
+CREATE INDEX IF NOT EXISTS idx_companies_rating ON companies(rating DESC);
+CREATE INDEX IF NOT EXISTS idx_companies_verified ON companies(verified_business);
+CREATE INDEX IF NOT EXISTS idx_companies_category ON companies(professional_category);
 
 -- Create updated_at trigger for companies
 DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- GC DASHBOARD TABLES
+-- ============================================
+
+-- Projects Table
+CREATE TABLE IF NOT EXISTS gc_projects (
+  id SERIAL PRIMARY KEY,
+  gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  location VARCHAR(255),
+  client VARCHAR(255),
+  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled')),
+  budget DECIMAL(15, 2),
+  duration INTEGER, -- in months
+  description TEXT,
+  progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL
+);
+
+-- Team Members Table
+CREATE TABLE IF NOT EXISTS gc_team_members (
+  id SERIAL PRIMARY KEY,
+  gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  role VARCHAR(100), -- Project Manager, Site Supervisor, etc.
+  employee_id VARCHAR(100),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('Direct Employee', 'Contractor')),
+  status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Terminated')),
+  progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+  avatar_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Project Team Assignments (Many-to-Many)
+CREATE TABLE IF NOT EXISTS gc_project_team_assignments (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES gc_projects(id) ON DELETE CASCADE,
+  team_member_id INTEGER NOT NULL REFERENCES gc_team_members(id) ON DELETE CASCADE,
+  role VARCHAR(100), -- Role in this specific project
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(project_id, team_member_id) -- Same person can't be assigned twice to same project
+);
+
+-- Documents Table
+CREATE TABLE IF NOT EXISTS gc_documents (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES gc_projects(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_type VARCHAR(50) NOT NULL, -- pdf, jpg, png, etc.
+  file_size BIGINT NOT NULL, -- in bytes
+  category VARCHAR(50) NOT NULL CHECK (category IN ('Plans', 'Drawings', 'Photos', 'Contracts', 'Invoices', 'Other')),
+  uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+  starred BOOLEAN DEFAULT FALSE,
+  shared BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for GC Dashboard tables
+CREATE INDEX IF NOT EXISTS idx_gc_projects_gc_id ON gc_projects(gc_id);
+CREATE INDEX IF NOT EXISTS idx_gc_projects_status ON gc_projects(status);
+CREATE INDEX IF NOT EXISTS idx_gc_projects_deleted_at ON gc_projects(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_gc_team_members_gc_id ON gc_team_members(gc_id);
+CREATE INDEX IF NOT EXISTS idx_gc_project_team_project_id ON gc_project_team_assignments(project_id);
+CREATE INDEX IF NOT EXISTS idx_gc_project_team_member_id ON gc_project_team_assignments(team_member_id);
+CREATE INDEX IF NOT EXISTS idx_gc_documents_project_id ON gc_documents(project_id);
+CREATE INDEX IF NOT EXISTS idx_gc_documents_category ON gc_documents(category);
+CREATE INDEX IF NOT EXISTS idx_gc_documents_uploaded_by ON gc_documents(uploaded_by);
+
+-- Create updated_at triggers for GC Dashboard tables
+DROP TRIGGER IF EXISTS update_gc_projects_updated_at ON gc_projects;
+CREATE TRIGGER update_gc_projects_updated_at BEFORE UPDATE ON gc_projects
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gc_team_members_updated_at ON gc_team_members;
+CREATE TRIGGER update_gc_team_members_updated_at BEFORE UPDATE ON gc_team_members
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gc_documents_updated_at ON gc_documents;
+CREATE TRIGGER update_gc_documents_updated_at BEFORE UPDATE ON gc_documents
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -41,7 +41,8 @@
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.11.1",
     "uuid": "^13.0.0",
-    "winston": "^3.18.3"
+    "winston": "^3.18.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
