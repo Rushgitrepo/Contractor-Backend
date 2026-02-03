@@ -331,6 +331,29 @@ CREATE INDEX IF NOT EXISTS idx_gc_documents_project_id ON gc_documents(project_i
 CREATE INDEX IF NOT EXISTS idx_gc_documents_category ON gc_documents(category);
 CREATE INDEX IF NOT EXISTS idx_gc_documents_uploaded_by ON gc_documents(uploaded_by);
 
+-- Project Invitations Table
+CREATE TABLE IF NOT EXISTS gc_project_invitations (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES gc_projects(id) ON DELETE CASCADE,
+  gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email VARCHAR(255),
+  phone VARCHAR(20),
+  role VARCHAR(100),
+  token VARCHAR(255) UNIQUE NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+  expires_at TIMESTAMP NOT NULL,
+  accepted_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for invitations
+CREATE INDEX IF NOT EXISTS idx_invitations_project_id ON gc_project_invitations(project_id);
+CREATE INDEX IF NOT EXISTS idx_invitations_token ON gc_project_invitations(token);
+CREATE INDEX IF NOT EXISTS idx_invitations_status ON gc_project_invitations(status);
+CREATE INDEX IF NOT EXISTS idx_invitations_email ON gc_project_invitations(email);
+CREATE INDEX IF NOT EXISTS idx_invitations_phone ON gc_project_invitations(phone);
+
 -- Create updated_at triggers for GC Dashboard tables
 DROP TRIGGER IF EXISTS update_gc_projects_updated_at ON gc_projects;
 CREATE TRIGGER update_gc_projects_updated_at BEFORE UPDATE ON gc_projects
@@ -342,4 +365,8 @@ CREATE TRIGGER update_gc_team_members_updated_at BEFORE UPDATE ON gc_team_member
 
 DROP TRIGGER IF EXISTS update_gc_documents_updated_at ON gc_documents;
 CREATE TRIGGER update_gc_documents_updated_at BEFORE UPDATE ON gc_documents
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gc_invitations_updated_at ON gc_project_invitations;
+CREATE TRIGGER update_gc_invitations_updated_at BEFORE UPDATE ON gc_project_invitations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

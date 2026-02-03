@@ -3,6 +3,8 @@ import { authenticate, authorize } from '../middleware/auth';
 import * as projectsController from '../controllers/gcDashboard/projects.controller';
 import * as teamController from '../controllers/gcDashboard/team.controller';
 import * as documentsController from '../controllers/gcDashboard/documents.controller';
+import * as bulkUploadController from '../controllers/gcDashboard/bulkUpload.controller';
+import * as invitationController from '../controllers/gcDashboard/invitation.controller';
 import { upload } from '../services/gcDashboard/storage.service';
 
 const router = Router();
@@ -56,6 +58,25 @@ router.get('/projects', projectsController.getProjects);
  *       - bearerAuth: []
  */
 router.get('/projects/:id', projectsController.getProjectById);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/projects/bulk-upload:
+ *   post:
+ *     summary: Bulk upload projects from Excel/CSV file
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: file
+ *         type: file
+ *         required: true
+ *         description: Excel (.xlsx, .xls) or CSV file with project data
+ */
+router.post('/projects/bulk-upload', upload.single('file'), bulkUploadController.bulkUploadProjects);
 
 /**
  * @swagger
@@ -181,6 +202,32 @@ router.post('/projects/:projectId/team', teamController.assignTeamMemberToProjec
 router.delete('/projects/:projectId/team/:teamMemberId', teamController.removeTeamMemberFromProject);
 
 // ============================================
+// TEAM INVITATION ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/gc-dashboard/projects/{projectId}/invite-team:
+ *   post:
+ *     summary: Invite team member via email/SMS
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/projects/:projectId/invite-team', invitationController.inviteTeamMember);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/projects/{projectId}/invitations:
+ *   get:
+ *     summary: Get all invitations for project
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/projects/:projectId/invitations', invitationController.getProjectInvitations);
+
+// ============================================
 // DOCUMENTS ROUTES
 // ============================================
 
@@ -268,5 +315,6 @@ router.put('/documents/:id', documentsController.updateDocument);
 router.delete('/documents/:id', documentsController.deleteDocument);
 
 export default router;
+
 
 

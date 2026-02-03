@@ -77,3 +77,16 @@ export const documentQuerySchema = z.object({
   category: z.enum(['Plans', 'Drawings', 'Photos', 'Contracts', 'Invoices', 'Other']).optional(),
 });
 
+
+// Invitation Validators
+export const inviteTeamMemberSchema = z.object({
+  email: z.string().email().optional(),
+  phone: z.string().max(20).optional(),
+  role: z.string().max(100).optional(),
+  message: z.string().max(500).optional(),
+}).refine(
+  (data) => data.email || data.phone,
+  {
+    message: 'Either email or phone must be provided',
+  }
+);
