@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "node -r ts-node/register src/database/migrate.ts",
+    "migrate:safe": "node -r ts-node/register scripts/migrate-safe.ts",
     "migrate:fresh": "node scripts/create-db.js && npm run migrate",
     "import:companies": "node -r ts-node/register src/database/addNewCompanies.ts",
     "test": "jest",
@@ -25,6 +26,7 @@
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^8.2.1",
@@ -42,7 +44,9 @@
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.11.1",
     "uuid": "^13.0.0",
-    "winston": "^3.18.3"
+    "winston": "^3.18.3",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

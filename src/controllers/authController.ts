@@ -248,10 +248,9 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: MESSAGES.LOGIN_SUCCESS,
       data: {
-        user: userResponse,
-        // We can optionally omit token/refreshToken from body now, 
-        // but keeping them for now doesn't hurt, just redundant.
-        // The frontend will rely on cookies.
+        user: userWithoutPassword,
+        token: token, // Include token in response for Postman/testing
+        refreshToken: refreshToken, // Include refresh token in response
       },
     });
   } catch (error) {

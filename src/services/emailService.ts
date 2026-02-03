@@ -59,3 +59,25 @@ export const sendVerificationEmail = async (to: string, code: string) => {
   `;
     return sendEmail(to, subject, html);
 };
+
+export const sendTeamMemberInvitation = async (to: string, name: string, gcName: string, role: string) => {
+    const subject = `You're invited to join ${gcName}'s Team on ContractorList`;
+    const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #f6d32d; margin: 0;">ContractorList</h1>
+      </div>
+      <h2 style="color: #333; text-align: center;">Team Invitation</h2>
+      <p>Hello <strong>${name}</strong>,</p>
+      <p><strong>${gcName}</strong> has added you to their team as a <strong>${role}</strong> on ContractorList.</p>
+      <p>ContractorList helps general contractors and their teams manage projects, documents, and communication in one place.</p>
+      <div style="margin: 30px 0; text-align: center;">
+        <a href="${config.app.frontendUrl}/login" style="background-color: #f6d32d; color: #000; padding: 14px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Go to Dashboard</a>
+      </div>
+      <p style="color: #666; font-size: 14px; text-align: center;">If you don't have an account yet, please sign up using this email address to join the team.</p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+      <p style="color: #999; font-size: 12px; text-align: center;">This is an automated message. Please do not reply to this email.<br>&copy; ${new Date().getFullYear()} ContractorList. All rights reserved.</p>
+    </div>
+  `;
+    return sendEmail(to, subject, html);
+};
