@@ -5,7 +5,7 @@ export const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(255),
   location: z.string().max(255).optional(),
   client: z.string().max(255).optional(),
-  status: z.enum(['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled']).default('Planning'),
+  status: z.enum(['Planning', 'Bidding', 'Active', 'Completed', 'On Hold']).default('Planning'),
   budget: z.number().positive().optional(),
   duration: z.number().int().positive().optional(),
   description: z.string().optional(),
@@ -16,7 +16,7 @@ export const updateProjectSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   location: z.string().max(255).optional(),
   client: z.string().max(255).optional(),
-  status: z.enum(['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled']).optional(),
+  status: z.enum(['Planning', 'Bidding', 'Active', 'Completed', 'On Hold']).optional(),
   budget: z.number().positive().optional(),
   duration: z.number().int().positive().optional(),
   description: z.string().optional(),
@@ -24,7 +24,7 @@ export const updateProjectSchema = z.object({
 });
 
 export const projectQuerySchema = z.object({
-  status: z.enum(['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled']).optional(),
+  status: z.enum(['Planning', 'Bidding', 'Active', 'Completed', 'On Hold']).optional(),
   search: z.string().optional(),
   page: z.preprocess(
     (val) => (val === undefined || val === '' ? '1' : String(val)),

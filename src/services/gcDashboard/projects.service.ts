@@ -277,7 +277,7 @@ export const checkProjectOwnership = async (projectId: number, gcId: number): Pr
 export const getDashboardOverview = async (gcId: number) => {
   // Get active projects count
   const projectsResult = await pool.query(
-    'SELECT COUNT(*) as count FROM gc_projects WHERE gc_id = $1 AND deleted_at IS NULL AND status = \'In Progress\'',
+    'SELECT COUNT(*) as count FROM gc_projects WHERE gc_id = $1 AND deleted_at IS NULL AND status IN (\'Active\', \'In Progress\', \'On Track\')',
     [gcId]
   );
 

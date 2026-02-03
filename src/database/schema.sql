@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS gc_projects (
   name VARCHAR(255) NOT NULL,
   location VARCHAR(255),
   client VARCHAR(255),
-  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled')),
+  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
   budget DECIMAL(15, 2),
   duration INTEGER, -- in months
   description TEXT,

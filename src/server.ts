@@ -1,5 +1,5 @@
 import app from './app';
-// server restart trigger
+// server restart trigger: updated validators v2 (5 statuses)
 import pool from './config/database';
 import { config } from './config';
 import logger from './utils/logger';
