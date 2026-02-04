@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as invitationService from '../../services/gcDashboard/invitation.service';
 import * as projectsService from '../../services/gcDashboard/projects.service';
+import pool from '../../config/database';
 
 // Send Team Invitation
 export const inviteTeamMember = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -89,10 +90,16 @@ export const inviteTeamMember = async (req: AuthRequest, res: Response): Promise
     };
 
     if (email) {
+      // Fetch GC info for the email
+      const gcResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [gcId]);
+      const gcName = gcResult.rows.length > 0
+        ? `${gcResult.rows[0].first_name} ${gcResult.rows[0].last_name}`
+        : req.user!.email || 'General Contractor';
+
       results.email = await invitationService.sendEmailInvitation(
         email,
         project.name,
-        req.user!.email || 'General Contractor',
+        gcName,
         role || 'Team Member',
         invitation.token,
         message

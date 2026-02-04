@@ -28,8 +28,12 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
     }
 
     // Check project ownership
+
     const isOwner = await projectsService.checkProjectOwnership(projectId, gcId);
+
+
     if (!isOwner) {
+
       res.status(403).json({
         success: false,
         error: {

@@ -14,6 +14,69 @@ router.use(authenticate);
 router.use(authorize('general-contractor'));
 
 // ============================================
+// DASHBOARD OVERVIEW ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/gc-dashboard/overview:
+ *   get:
+ *     summary: Get dashboard overview stats
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/overview', projectsController.getOverview);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/recent-projects:
+ *   get:
+ *     summary: Get recent projects for overview
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 3
+ */
+router.get('/recent-projects', projectsController.getRecentProjects);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/project-discovery:
+ *   get:
+ *     summary: Discover subcontractors and suppliers
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ */
+router.get('/project-discovery', projectsController.getProjectDiscovery);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids:
+ *   get:
+ *     summary: Get all project bids/invitations
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/bids', projectsController.getBids);
+
+// ============================================
 // PROJECTS ROUTES
 // ============================================
 
@@ -104,7 +167,7 @@ router.put('/projects/:id', projectsController.updateProject);
  * @swagger
  * /api/gc-dashboard/projects/{id}:
  *   delete:
- *     summary: Delete project (soft delete)
+ *     summary: Delete project (permanent removal)
  *     tags: [GC Dashboard]
  *     security:
  *       - bearerAuth: []
@@ -175,9 +238,31 @@ router.put('/team-members/:id', teamController.updateTeamMember);
  */
 router.delete('/team-members/:id', teamController.deleteTeamMember);
 
+/**
+ * @swagger
+ * /api/gc-dashboard/team-members/{id}/send-reminder:
+ *   post:
+ *     summary: Send reminder email to team member
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/team-members/:id/send-reminder', teamController.sendTeamMemberReminder);
+
 // ============================================
 // PROJECT TEAM ASSIGNMENTS ROUTES
 // ============================================
+
+/**
+ * @swagger
+ * /api/gc-dashboard/projects/{projectId}/team:
+ *   get:
+ *     summary: Get team members assigned to project
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/projects/:projectId/team', teamController.getProjectTeamMembers);
 
 /**
  * @swagger
@@ -315,8 +400,3 @@ router.put('/documents/:id', documentsController.updateDocument);
 router.delete('/documents/:id', documentsController.deleteDocument);
 
 export default router;
-
-
-
-
-

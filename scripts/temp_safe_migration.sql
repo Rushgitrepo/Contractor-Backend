@@ -1,23 +1,8 @@
 -- CLEANUP: Drop all existing tables to ensure no duplicates or schema collisions
-DROP TABLE IF EXISTS refresh_tokens CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS register CASCADE; -- Remove the temporary table we made
-DROP TABLE IF EXISTS clients CASCADE;
-DROP TABLE IF EXISTS general_contractors CASCADE;
-DROP TABLE IF EXISTS sub_contractors CASCADE;
-DROP TABLE IF EXISTS suppliers CASCADE;
-DROP TABLE IF EXISTS client_profiles CASCADE;
-DROP TABLE IF EXISTS contractor_profiles CASCADE;
-DROP TABLE IF EXISTS general_contractor_profiles CASCADE;
-DROP TABLE IF EXISTS sub_contractor_profiles CASCADE;
-DROP TABLE IF EXISTS supplier_profiles CASCADE;
-DROP TABLE IF EXISTS client_profiles_legacy CASCADE;
-DROP TABLE IF EXISTS contractor_profiles_legacy CASCADE;
-DROP TABLE IF EXISTS verification_codes CASCADE;
 
 
 -- Create users table (Conventional name for Identity)
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
@@ -34,7 +19,7 @@ CREATE TABLE users (
 );
 
 -- Create refresh_tokens table
-CREATE TABLE refresh_tokens (
+CREATE TABLE IF NOT EXISTS refresh_tokens (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token VARCHAR(500) NOT NULL,
@@ -43,7 +28,7 @@ CREATE TABLE refresh_tokens (
 );
 
 -- Create verification_codes table
-CREATE TABLE verification_codes (
+CREATE TABLE IF NOT EXISTS verification_codes (
   id SERIAL PRIMARY KEY,
   identifier VARCHAR(255) NOT NULL, -- email or phone
   type VARCHAR(50) NOT NULL CHECK (type IN ('email', 'sms')),
@@ -52,7 +37,7 @@ CREATE TABLE verification_codes (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_verification_identifier ON verification_codes(identifier);
+CREATE INDEX IF NOT EXISTS idx_verification_identifier ON verification_codes(identifier);
 
 -- ============================================
 
@@ -60,7 +45,7 @@ CREATE INDEX idx_verification_identifier ON verification_codes(identifier);
 -- ============================================
 
 -- Client Profile
-CREATE TABLE client_profiles (
+CREATE TABLE IF NOT EXISTS client_profiles (
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   project_type VARCHAR(100),
@@ -78,7 +63,7 @@ CREATE TABLE client_profiles (
 );
 
 -- General Contractor Profile
-CREATE TABLE general_contractor_profiles (
+CREATE TABLE IF NOT EXISTS general_contractor_profiles (
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company_name VARCHAR(255),
@@ -126,7 +111,7 @@ CREATE TABLE general_contractor_profiles (
 );
 
 -- Sub Contractor Profile
-CREATE TABLE sub_contractor_profiles (
+CREATE TABLE IF NOT EXISTS sub_contractor_profiles (
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company_name VARCHAR(255),
@@ -142,7 +127,7 @@ CREATE TABLE sub_contractor_profiles (
 );
 
 -- Supplier Profile
-CREATE TABLE supplier_profiles (
+CREATE TABLE IF NOT EXISTS supplier_profiles (
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company_name VARCHAR(255),
@@ -161,8 +146,8 @@ CREATE TABLE supplier_profiles (
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -183,13 +168,6 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
 -- ============================================
 
 -- Drop only old/unused tables (not companies table to preserve data)
-DROP TABLE IF EXISTS company_images CASCADE;
-DROP TABLE IF EXISTS company_reviews CASCADE;
-DROP TABLE IF EXISTS company_awards CASCADE;
-DROP TABLE IF EXISTS company_certifications CASCADE;
-DROP TABLE IF EXISTS company_specialties CASCADE;
-DROP TABLE IF EXISTS service_areas CASCADE;
-DROP TABLE IF EXISTS services_offered CASCADE;
 -- NOTE: DO NOT DROP companies table - it contains data!
 -- DROP TABLE IF EXISTS companies CASCADE;
 
@@ -261,12 +239,9 @@ CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
 -- REAL-TIME MESSAGING
 -- ============================================
 
-DROP TABLE IF EXISTS messages CASCADE;
-DROP TABLE IF EXISTS conversation_participants CASCADE;
-DROP TABLE IF EXISTS conversations CASCADE;
 
 -- Conversations (Chat Rooms)
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(255), -- Optional, useful for group chats or project topics
   type VARCHAR(50) DEFAULT 'direct' CHECK (type IN ('direct', 'group', 'project')),
@@ -278,17 +253,17 @@ CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Participants (Users in a conversation)
-CREATE TABLE conversation_participants (
+CREATE TABLE IF NOT EXISTS conversation_participants (
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (conversation_id, user_id)
 );
-CREATE INDEX idx_cp_user ON conversation_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_cp_user ON conversation_participants(user_id);
 
 -- Messages
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -311,7 +286,7 @@ CREATE TABLE IF NOT EXISTS gc_projects (
   name VARCHAR(255) NOT NULL,
   location VARCHAR(255),
   client VARCHAR(255),
-  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
+  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled')),
   budget DECIMAL(15, 2),
   duration INTEGER, -- in months
   description TEXT,
@@ -338,8 +313,8 @@ CREATE TABLE IF NOT EXISTS gc_team_members (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX idx_messages_created ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
 CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

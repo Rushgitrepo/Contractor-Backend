@@ -145,15 +145,15 @@ export const register = async (req: Request, res: Response) => {
       data: {
         user: {
           id: userId,
-          first_name: firstName,
-          last_name: lastName,
+          firstName: firstName,
+          lastName: lastName,
           email,
           role: systemRole,
           phone,
           company: companyName,
-          is_verified: false,
-          created_at: new Date(),
-          updated_at: new Date()
+          isVerified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
       }
     });
@@ -228,8 +228,21 @@ export const login = async (req: Request, res: Response) => {
     res.cookie('token', token, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    // Remove password from response
+    // Remove password from response and map to camelCase
     const { password: _, ...userWithoutPassword } = user;
+
+    // Map database snake_case fields to camelCase for frontend
+    const userResponse = {
+      id: userWithoutPassword.id,
+      firstName: userWithoutPassword.first_name,
+      lastName: userWithoutPassword.last_name,
+      email: userWithoutPassword.email,
+      role: userWithoutPassword.role,
+      phone: userWithoutPassword.phone,
+      isVerified: userWithoutPassword.is_verified,
+      createdAt: userWithoutPassword.created_at,
+      updatedAt: userWithoutPassword.updated_at,
+    };
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

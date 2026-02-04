@@ -1,13 +1,6 @@
-import { Pool } from 'pg';
+import pool from '../../config/database';
 import { config } from '../../config';
 
-const pool = new Pool({
-  host: config.database.host,
-  port: config.database.port,
-  database: config.database.name,
-  user: config.database.user,
-  password: config.database.password,
-});
 
 export interface CreateTeamMemberData {
   gcId: number;
@@ -73,11 +66,19 @@ export const getTeamMembers = async (gcId: number, projectId?: number) => {
     );
     return result.rows;
   } else {
-    // Get all team members for GC
+    // Get all team members for GC with assigned projects
     const result = await pool.query(
-      `SELECT * FROM gc_team_members 
-       WHERE gc_id = $1 
-       ORDER BY created_at DESC`,
+      `SELECT 
+        tm.*,
+        (
+            SELECT COALESCE(json_agg(json_build_object('id', p.id, 'name', p.name)), '[]')
+            FROM gc_project_team_assignments ta
+            JOIN gc_projects p ON p.id = ta.project_id
+            WHERE ta.team_member_id = tm.id
+        ) as assigned_projects
+       FROM gc_team_members tm 
+       WHERE tm.gc_id = $1 
+       ORDER BY tm.created_at DESC`,
       [gcId]
     );
     return result.rows;
@@ -105,9 +106,16 @@ export const updateTeamMember = async (teamMemberId: number, gcId: number, data:
   const values: any[] = [];
   let paramCount = 1;
 
+  // Map camelCase to snake_case for database columns
+  const fieldMapping: Record<string, string> = {
+    'employeeId': 'employee_id',
+    'avatarUrl': 'avatar_url'
+  };
+
   Object.entries(data).forEach(([key, value]) => {
     if (value !== undefined) {
-      const dbKey = key === 'employeeId' ? 'employee_id' : key === 'avatarUrl' ? 'avatar_url' : key;
+      // Convert camelCase to snake_case if mapping exists, otherwise use as-is
+      const dbKey = fieldMapping[key] || key;
       updateFields.push(`${dbKey} = $${paramCount}`);
       values.push(value);
       paramCount++;

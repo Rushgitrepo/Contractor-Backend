@@ -11,6 +11,7 @@ import companyRoutes from './routes/companyRoutes';
 import metaRoutes from './routes/metaRoutes';
 import contractorUpdateRoutes from './routes/contractorUpdateRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import chatRoutes from './routes/chatRoutes';
 import gcDashboardRoutes from './routes/gcDashboard.routes';
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -42,7 +43,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Apply rate limiting to all routes
-app.use('/api/', apiLimiter);
+// app.use('/api/', apiLimiter);
 
 // Serve static files
 app.use(express.static(path.join(process.cwd(), 'public')));
@@ -64,6 +65,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/contractors/meta', metaRoutes);
 app.use('/api/contractor', contractorUpdateRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/gc-dashboard', gcDashboardRoutes);
 
 // 404 handler

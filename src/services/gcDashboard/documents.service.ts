@@ -1,15 +1,7 @@
-import { Pool } from 'pg';
+import pool from '../../config/database';
 import { config } from '../../config';
-import path from 'path';
 import fs from 'fs';
-
-const pool = new Pool({
-  host: config.database.host,
-  port: config.database.port,
-  database: config.database.name,
-  user: config.database.user,
-  password: config.database.password,
-});
+import path from 'path';
 
 export interface CreateDocumentData {
   projectId: number;

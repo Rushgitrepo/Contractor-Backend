@@ -3,6 +3,8 @@ import { AuthRequest } from '../../middleware/auth';
 import * as teamService from '../../services/gcDashboard/team.service';
 import * as projectsService from '../../services/gcDashboard/projects.service';
 import { createTeamMemberSchema, updateTeamMemberSchema, assignTeamMemberSchema } from '../../validators/gcDashboard.validator';
+import pool from '../../config/database';
+import { sendTeamMemberInvitation } from '../../services/emailService';
 
 // Create Team Member
 export const createTeamMember = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -19,6 +21,28 @@ export const createTeamMember = async (req: AuthRequest, res: Response): Promise
       employeeId: validatedData.employee_id,
       avatarUrl: validatedData.avatar_url,
     });
+
+    // Send email invitation if email provided
+    if (validatedData.email) {
+      try {
+        // Fetch GC info for the email
+        const gcResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [gcId]);
+        const gcName = gcResult.rows.length > 0
+          ? `${gcResult.rows[0].first_name} ${gcResult.rows[0].last_name}`
+          : 'General Contractor';
+
+        await sendTeamMemberInvitation(
+          validatedData.email,
+          validatedData.name,
+          gcName,
+          validatedData.role || 'Team Member'
+        );
+        console.log(`[Invitation] Email sent to ${validatedData.email}`);
+      } catch (emailError) {
+        console.error('[Invitation] Failed to send email:', emailError);
+        // We don't fail the request if email fails, but we log it
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -217,10 +241,21 @@ export const updateTeamMember = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // Update team member
-    const updateData: any = { ...validatedData };
-    if (validatedData.employee_id !== undefined) updateData.employeeId = validatedData.employee_id;
-    if (validatedData.avatar_url !== undefined) updateData.avatarUrl = validatedData.avatar_url;
+    // Update team member - transform snake_case to camelCase
+    const updateData: any = {};
+
+    // Copy all fields from validatedData, transforming snake_case to camelCase
+    Object.entries(validatedData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (key === 'employee_id') {
+          updateData.employeeId = value;
+        } else if (key === 'avatar_url') {
+          updateData.avatarUrl = value;
+        } else {
+          updateData[key] = value;
+        }
+      }
+    });
 
     const teamMember = await teamService.updateTeamMember(teamMemberId, gcId, updateData);
 
@@ -343,6 +378,85 @@ export const deleteTeamMember = async (req: AuthRequest, res: Response): Promise
       error: {
         code: 'INTERNAL_ERROR',
         message: error.message || 'Failed to delete team member',
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+};
+
+// Get Team Members Assigned to Project
+export const getProjectTeamMembers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const gcId = req.user!.id;
+    const projectId = parseInt(req.params.projectId);
+
+    if (isNaN(projectId)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_ID',
+          message: 'Invalid project ID',
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    // Check project ownership
+    const isOwner = await projectsService.checkProjectOwnership(projectId, gcId);
+    if (!isOwner) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'You do not have permission to access this project',
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    // Get team members assigned to this project
+    const teamMembers = await pool.query(
+      `SELECT 
+        tm.id,
+        tm.name,
+        tm.email,
+        tm.phone,
+        tm.role,
+        tm.employee_id,
+        tm.type,
+        tm.status,
+        tm.avatar_url,
+        pta.role as project_role,
+        pta.assigned_at
+      FROM gc_team_members tm
+      INNER JOIN gc_project_team_assignments pta ON tm.id = pta.team_member_id
+      WHERE pta.project_id = $1 AND tm.gc_id = $2
+      ORDER BY pta.assigned_at DESC`,
+      [projectId, gcId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: teamMembers.rows,
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get project team members error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error.message || 'Failed to get project team members',
       },
       meta: {
         timestamp: new Date().toISOString(),
@@ -542,6 +656,93 @@ export const removeTeamMemberFromProject = async (req: AuthRequest, res: Respons
 };
 
 
+// Send Reminder Email to Team Member
+export const sendTeamMemberReminder = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const gcId = req.user!.id;
+    const teamMemberId = parseInt(req.params.id);
+
+    if (isNaN(teamMemberId)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_ID',
+          message: 'Invalid team member ID',
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    // Get team member details
+    const teamMember = await teamService.getTeamMemberById(teamMemberId, gcId);
+
+    if (!teamMember) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'TEAM_MEMBER_NOT_FOUND',
+          message: `Team member with ID ${teamMemberId} not found`,
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    // Check if team member has an email
+    if (!teamMember.email) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'NO_EMAIL',
+          message: 'Team member does not have an email address',
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    // Get GC name for email
+    const gcResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [gcId]);
+    const gcName = gcResult.rows[0]
+      ? `${gcResult.rows[0].first_name} ${gcResult.rows[0].last_name}`
+      : 'Your Team Lead';
+
+    // Send reminder email
+    await sendTeamMemberInvitation(
+      teamMember.email,
+      teamMember.name,
+      gcName,
+      teamMember.role || 'Team Member'
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Reminder email sent successfully',
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Send reminder error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error.message || 'Failed to send reminder',
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+};
 
 
 

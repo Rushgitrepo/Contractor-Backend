@@ -1,16 +1,9 @@
-import { Pool } from 'pg';
+import pool from '../../config/database';
 import { config } from '../../config';
 import { sendEmail } from '../emailService';
 import { sendSms } from '../smsService';
 import { v4 as uuidv4 } from 'uuid';
 
-const pool = new Pool({
-  host: config.database.host,
-  port: config.database.port,
-  database: config.database.name,
-  user: config.database.user,
-  password: config.database.password,
-});
 
 export interface InvitationData {
   projectId: number;
@@ -47,20 +40,45 @@ export const sendEmailInvitation = async (
   customMessage?: string
 ) => {
   const invitationLink = `${config.app.frontendUrl}/accept-invitation?token=${token}`;
-  
-  const subject = `You're invited to join ${projectName}`;
+
+  const subject = `You're invited to join the project "${projectName}" on ContractorList`;
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333;">Project Invitation</h2>
-      <p>Hello,</p>
-      <p><strong>${gcName}</strong> has invited you to join the project <strong>${projectName}</strong> as a <strong>${role || 'team member'}</strong>.</p>
-      ${customMessage ? `<p style="background-color: #f4f4f4; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;"><em>"${customMessage}"</em></p>` : ''}
-      <div style="margin: 30px 0;">
-        <a href="${invitationLink}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Accept Invitation</a>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h1 style="color: #f6d32d; margin: 0; font-size: 28px;">ContractorList</h1>
       </div>
-      <p style="color: #666; font-size: 14px;">Or copy and paste this link in your browser:</p>
-      <p style="color: #007bff; word-break: break-all; font-size: 12px;">${invitationLink}</p>
-      <p style="color: #999; font-size: 12px; margin-top: 30px;">This invitation will expire in 7 days.</p>
+      
+      <div style="padding: 10px 0; border-bottom: 1px solid #f4f4f4; margin-bottom: 25px;">
+        <h2 style="color: #333; margin: 0; font-size: 20px; text-align: center;">Project Invitation</h2>
+      </div>
+
+      <p style="font-size: 16px; color: #444;">Hello,</p>
+      
+      <p style="font-size: 16px; color: #444; line-height: 1.6;">
+        <strong>${gcName}</strong> has invited you to join the project <strong>${projectName}</strong> as a <strong>${role || 'Team Member'}</strong>.
+      </p>
+
+      ${customMessage ? `
+      <div style="background-color: #f9f9f9; padding: 20px; border-left: 4px solid #f6d32d; margin: 25px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #555; font-style: italic; line-height: 1.5;">"${customMessage}"</p>
+      </div>
+      ` : ''}
+
+      <div style="margin: 35px 0; text-align: center;">
+        <a href="${invitationLink}" style="background-color: #f6d32d; color: #000; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px; transition: background-color 0.2s;">Accept Invitation</a>
+      </div>
+
+      <div style="background-color: #fff8e1; padding: 15px; border-radius: 8px; margin-top: 30px;">
+        <p style="color: #856404; font-size: 13px; margin: 0; text-align: center;">
+          Or copy and paste this link in your browser:<br>
+          <a href="${invitationLink}" style="color: #007bff; word-break: break-all; font-size: 12px;">${invitationLink}</a>
+        </p>
+      </div>
+
+      <p style="color: #999; font-size: 12px; margin-top: 35px; text-align: center; line-height: 1.4;">
+        This invitation will expire in 7 days.<br>
+        &copy; ${new Date().getFullYear()} ContractorList. Empowering Construction Teams.
+      </p>
     </div>
   `;
 
