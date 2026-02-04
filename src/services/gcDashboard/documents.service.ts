@@ -40,15 +40,20 @@ export const createDocument = async (data: CreateDocumentData) => {
 
 // Get All Documents for Project
 export const getDocuments = async (projectId: number, category?: string) => {
-  let query = `SELECT * FROM gc_documents WHERE project_id = $1`;
+  let query = `
+    SELECT d.*, u.first_name || ' ' || u.last_name as uploader_name
+    FROM gc_documents d
+    LEFT JOIN users u ON d.uploaded_by = u.id
+    WHERE d.project_id = $1
+  `;
   const params: any[] = [projectId];
 
   if (category) {
-    query += ` AND category = $2`;
+    query += ` AND d.category = $2`;
     params.push(category);
   }
 
-  query += ` ORDER BY created_at DESC`;
+  query += ` ORDER BY d.created_at DESC`;
 
   const result = await pool.query(query, params);
   return result.rows;

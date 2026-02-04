@@ -79,6 +79,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
+
     // Create document record
     const document = await documentsService.createDocument({
       projectId,
@@ -90,9 +91,22 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       uploadedBy: gcId,
     });
 
+    const mappedDocument = {
+      id: document.id,
+      name: document.name,
+      size: parseInt(document.file_size),
+      uploaded: document.created_at,
+      uploadedAt: document.created_at,
+      uploadedBy: req.user?.email || 'System', // Fallback since we don't have name
+      category: document.category,
+      fileType: document.file_type,
+      starred: document.starred,
+      shared: document.shared
+    };
+
     res.status(201).json({
       success: true,
-      data: document,
+      data: mappedDocument,
       message: 'Document uploaded successfully',
       meta: {
         timestamp: new Date().toISOString(),
@@ -155,9 +169,23 @@ export const getDocuments = async (req: AuthRequest, res: Response): Promise<voi
     // Get documents
     const documents = await documentsService.getDocuments(projectId, validatedQuery.category);
 
+    const mappedDocuments = documents.map((doc: any) => ({
+      id: doc.id,
+      name: doc.name,
+      size: parseInt(doc.file_size),
+      uploaded: doc.created_at,
+      uploadedAt: doc.created_at,
+      uploadedBy: doc.uploader_name || 'System',
+      category: doc.category,
+      fileType: doc.file_type,
+      starred: doc.starred,
+      shared: doc.shared,
+      filePath: doc.file_path
+    }));
+
     res.status(200).json({
       success: true,
-      data: documents,
+      data: mappedDocuments,
       meta: {
         timestamp: new Date().toISOString(),
       },

@@ -424,11 +424,11 @@ export const getProjectDiscovery = async (req: AuthRequest, res: Response): Prom
     }
 };
 
-// Get Bids
-export const getBids = async (req: AuthRequest, res: Response): Promise<void> => {
+// Get Sent Invitations (previously misnamed "getBids") - This returns invitations sent to SCs/Contractors.
+export const getSentInvitations = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const gcId = req.user!.id;
-        const bids = await projectsService.getBids(gcId);
+        const bids = await projectsService.getSentInvitations(gcId);
 
         res.status(200).json({
             success: true,
@@ -448,3 +448,4 @@ export const getBids = async (req: AuthRequest, res: Response): Promise<void> =>
         });
     }
 };
+

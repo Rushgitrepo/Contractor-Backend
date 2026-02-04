@@ -257,6 +257,61 @@ CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 
+
+-- ============================================
+-- MARKETPLACE / CUSTOMER PROJECTS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  sector VARCHAR(20) NOT NULL DEFAULT 'private'
+    CHECK (sector IN ('public','private')),
+
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+
+  project_type VARCHAR(50) NOT NULL,
+  -- examples: kitchen_remodel, bathroom_remodel, roofing, flooring, new_construction
+
+  budget_min DECIMAL(12,2),
+  budget_max DECIMAL(12,2),
+
+  location_city VARCHAR(100),
+  location_state VARCHAR(50),
+  location_zip VARCHAR(20),
+
+  start_date DATE,
+  end_date DATE,
+
+  bid_deadline DATE NOT NULL,
+
+  status VARCHAR(20) NOT NULL DEFAULT 'open'
+    CHECK (status IN ('draft','open','closed','awarded','cancelled')),
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE INDEX IF NOT EXISTS idx_projects_sector ON projects(sector);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_type ON projects(project_type);
+CREATE INDEX IF NOT EXISTS idx_projects_location ON projects(location_state, location_city);
+CREATE INDEX IF NOT EXISTS idx_projects_budget ON projects(budget_min, budget_max);
+CREATE INDEX IF NOT EXISTS idx_projects_deadline ON projects(bid_deadline);
+
+
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
+
+CREATE TRIGGER update_projects_updated_at
+BEFORE UPDATE ON projects
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
 -- ============================================
 -- REAL-TIME MESSAGING
 -- ============================================
@@ -418,4 +473,66 @@ CREATE TRIGGER update_gc_documents_updated_at BEFORE UPDATE ON gc_documents
 
 DROP TRIGGER IF EXISTS update_gc_invitations_updated_at ON gc_project_invitations;
 CREATE TRIGGER update_gc_invitations_updated_at BEFORE UPDATE ON gc_project_invitations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BIDDING SYSTEM (Marketplace)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS bids (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  contractor_type VARCHAR(20) NOT NULL DEFAULT 'gc' CHECK (contractor_type IN ('gc','sc')),
+
+  total_price DECIMAL(12,2) NOT NULL,
+
+  estimated_start_date DATE,
+  estimated_end_date DATE,
+
+  notes TEXT,
+  company_highlights TEXT,
+  relevant_experience TEXT,
+  credentials TEXT,
+
+  status VARCHAR(20) NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft','submitted','viewed','accepted','rejected','withdrawn','started')),
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE (project_id, contractor_id)
+);
+
+CREATE TABLE IF NOT EXISTS bid_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  bid_id UUID NOT NULL REFERENCES bids(id) ON DELETE CASCADE,
+
+  item_name VARCHAR(255) NOT NULL,
+  item_description TEXT,
+  item_price DECIMAL(12,2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bid_status_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  bid_id UUID NOT NULL REFERENCES bids(id) ON DELETE CASCADE,
+
+  old_status VARCHAR(20),
+  new_status VARCHAR(20),
+
+  changed_by INTEGER NOT NULL REFERENCES users(id),
+  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_bids_project ON bids(project_id);
+CREATE INDEX IF NOT EXISTS idx_bids_contractor ON bids(contractor_id);
+CREATE INDEX IF NOT EXISTS idx_bid_items_bid ON bid_items(bid_id);
+
+-- Trigger for bids updated_at
+DROP TRIGGER IF EXISTS update_bids_updated_at ON bids;
+CREATE TRIGGER update_bids_updated_at BEFORE UPDATE ON bids
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
