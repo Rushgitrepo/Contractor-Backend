@@ -250,7 +250,7 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: MESSAGES.LOGIN_SUCCESS,
       data: {
-        user: userWithoutPassword,
+        user: userResponse,
         token: token, // Include token in response for Postman/testing
         refreshToken: refreshToken, // Include refresh token in response
       },
