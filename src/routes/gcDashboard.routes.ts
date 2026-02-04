@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
 import * as projectsController from '../controllers/gcDashboard/projects.controller';
@@ -5,11 +6,182 @@ import * as teamController from '../controllers/gcDashboard/team.controller';
 import * as documentsController from '../controllers/gcDashboard/documents.controller';
 import * as bulkUploadController from '../controllers/gcDashboard/bulkUpload.controller';
 import * as invitationController from '../controllers/gcDashboard/invitation.controller';
+import * as bidsController from '../controllers/gcDashboard/bids.controller';
 import { upload } from '../services/gcDashboard/storage.service';
 
 const router = Router();
 
-// All routes require authentication and GC role
+// ============================================
+// BIDS MANAGEMENT ROUTES
+// ============================================
+// These routes handle bid creation, submission, and management
+// Note: These routes are placed BEFORE the global GC restriction because
+// they may need to be accessed by Subcontractors as well (e.g. creating/submitting bids)
+// Each route handles its own authorization.
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids:
+ *   get:
+ *     summary: Get all bids by current user (contractor)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    '/bids',
+    authenticate,
+    authorize('general-contractor', 'subcontractor'),
+    bidsController.getMyBids
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids:
+ *   post:
+ *     summary: Create a new bid (draft)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+    '/bids',
+    authenticate,
+    authorize('general-contractor', 'subcontractor'),
+    bidsController.createBid
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}:
+ *   get:
+ *     summary: Get bid details
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    '/bids/:id',
+    authenticate,
+    bidsController.getBidDetail
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}/items:
+ *   put:
+ *     summary: Update bid items (draft only)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put(
+    '/bids/:id/items',
+    authenticate,
+    authorize('general-contractor', 'subcontractor'),
+    bidsController.updateBidItems
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}/submit:
+ *   post:
+ *     summary: Submit a bid
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+    '/bids/:id/submit',
+    authenticate,
+    authorize('general-contractor', 'subcontractor'),
+    bidsController.submitBid
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}/withdraw:
+ *   post:
+ *     summary: Withdraw a bid
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+    '/bids/:id/withdraw',
+    authenticate,
+    authorize('general-contractor', 'subcontractor'),
+    bidsController.withdrawBid
+);
+
+// Owner/GC Actions on Bids (Accept/Reject)
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}/accept:
+ *   post:
+ *     summary: Accept a bid (Project Owner only)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+    '/bids/:id/accept',
+    authenticate,
+    authorize('client', 'general-contractor'), // Assuming GC can accept bids from SCs
+    bidsController.acceptBid
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/bids/{id}/reject:
+ *   post:
+ *     summary: Reject a bid (Project Owner only)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+    '/bids/:id/reject',
+    authenticate,
+    authorize('client', 'general-contractor'),
+    bidsController.rejectBid
+);
+
+router.post(
+    '/bids/:id/start',
+    authenticate,
+    authorize('client', 'general-contractor'),
+    bidsController.startProjectFromBid
+);
+
+router.delete(
+    '/bids/:id',
+    authenticate,
+    bidsController.deleteBid
+);
+
+/**
+ * @swagger
+ * /api/gc-dashboard/projects/{projectId}/bids:
+ *   get:
+ *     summary: Get all bids for a project (Owner only)
+ *     tags: [Bids Management]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    '/projects/:projectId/bids',
+    authenticate,
+    authorize('client', 'general-contractor'),
+    bidsController.getProjectBids
+);
+
+
+// ============================================
+// GENERAL DASHBOARD ROUTES (GC Restricted)
+// ============================================
+
+// Apply Global Authentication and GC Authorization for subsequent routes
 router.use(authenticate);
 router.use(authorize('general-contractor'));
 
@@ -47,9 +219,20 @@ router.get('/recent-projects', projectsController.getRecentProjects);
 
 /**
  * @swagger
+ * /api/gc-dashboard/sent-invitations:
+ *   get:
+ *     summary: Get all project invitations sent by GC
+ *     tags: [GC Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/sent-invitations', projectsController.getSentInvitations);
+
+/**
+ * @swagger
  * /api/gc-dashboard/project-discovery:
  *   get:
- *     summary: Discover subcontractors and suppliers
+ *     summary: Discover subcontractors and suppliers (or Marketplace Projects)
  *     tags: [GC Dashboard]
  *     security:
  *       - bearerAuth: []
@@ -64,17 +247,6 @@ router.get('/recent-projects', projectsController.getRecentProjects);
  *           type: string
  */
 router.get('/project-discovery', projectsController.getProjectDiscovery);
-
-/**
- * @swagger
- * /api/gc-dashboard/bids:
- *   get:
- *     summary: Get all project bids/invitations
- *     tags: [GC Dashboard]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/bids', projectsController.getBids);
 
 // ============================================
 // PROJECTS ROUTES
@@ -330,6 +502,16 @@ router.get('/projects/:projectId/invitations', invitationController.getProjectIn
  *         schema:
  *           type: string
  *           enum: [Plans, Drawings, Photos, Contracts, Invoices, Other]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
  */
 router.get('/projects/:projectId/documents', documentsController.getDocuments);
 

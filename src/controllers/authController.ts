@@ -21,22 +21,24 @@ export const register = async (req: Request, res: Response) => {
     // Client
     projectType, budgetRange, timeline, propertySize, financingStatus,
     // Arrays
-    trades, goals
+    trades = [], goals = []
   } = req.body as RegisterRequest;
 
-  // Enforce at least one trade and one goal
-  if (!trades || !Array.isArray(trades) || trades.length === 0) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'At least one trade must be selected'
-    });
-  }
+  // Enforce at least one trade and one goal (For Contractors/Suppliers)
+  if (workType !== 'client') {
+    if (!trades || !Array.isArray(trades) || trades.length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'At least one trade must be selected'
+      });
+    }
 
-  if (!goals || !Array.isArray(goals) || goals.length === 0) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'At least one goal must be selected'
-    });
+    if (!goals || !Array.isArray(goals) || goals.length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'At least one goal must be selected'
+      });
+    }
   }
 
   // Normalize email
@@ -248,7 +250,7 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: MESSAGES.LOGIN_SUCCESS,
       data: {
-        user: userWithoutPassword,
+        user: userResponse,
         token: token, // Include token in response for Postman/testing
         refreshToken: refreshToken, // Include refresh token in response
       },

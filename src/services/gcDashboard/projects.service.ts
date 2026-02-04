@@ -277,14 +277,16 @@ export const checkProjectOwnership = async (projectId: number, gcId: number): Pr
 export const getDashboardOverview = async (gcId: number) => {
   // Get active projects count
   const projectsResult = await pool.query(
-    'SELECT COUNT(*) as count FROM gc_projects WHERE gc_id = $1 AND deleted_at IS NULL AND status IN (\'Active\', \'In Progress\', \'On Track\')',
+    'SELECT COUNT(*) as count FROM gc_projects WHERE gc_id = $1 AND deleted_at IS NULL AND status IN (\'Active\', \'Bidding\')',
     [gcId]
   );
 
-  // Get pending bids count (simulated or from a bids table if it exists)
-  // For now, let's count companies that haven't been 'onboarded' or similar
+  // Get pending bids count from the new 'bids' table
+  // We count bids submitted by this GC OR bids received for this GC's projects
   const bidsResult = await pool.query(
-    'SELECT COUNT(*) as count FROM gc_invitations WHERE gc_id = $1 AND status = \'Pending\'',
+    `SELECT COUNT(*) as count FROM bids 
+     WHERE (contractor_id = $1 AND status = 'submitted')
+     OR (project_id IN (SELECT id FROM gc_projects WHERE gc_id = $1) AND status = 'submitted')`,
     [gcId]
   );
 
@@ -331,55 +333,91 @@ export const getRecentProjects = async (gcId: number, limit: number = 3) => {
   }));
 };
 
-// Get Project Discovery (Subcontractors & Suppliers)
+// Get Project Discovery (Marketplace Projects)
 export const getProjectDiscovery = async (filters: { search?: string, location?: string, type?: string }) => {
   let query = `
     SELECT 
-      id, company_name as name, address as location, rating, 
-      verified_business as verified, professional_category as trade,
-      image_url as avatar, specialties
-    FROM companies 
-    WHERE 1=1
+      id,
+      title as name, 
+      description, 
+      location_city || ', ' || location_state as location, 
+      budget_min, 
+      budget_max, 
+      project_type as category, 
+      'Marketplace' as source, 
+      created_at as posted, 
+      bid_deadline as deadline, 
+      status, 
+      owner_id,
+      sector
+    FROM projects 
+    WHERE status = 'open'
   `;
+
   const params: any[] = [];
   let paramCount = 1;
 
   if (filters.search) {
-    query += ` AND (company_name ILIKE $${paramCount} OR professional_category ILIKE $${paramCount})`;
+    query += ` AND (title ILIKE $${paramCount} OR description ILIKE $${paramCount})`;
     params.push(`%${filters.search}%`);
     paramCount++;
   }
 
-  if (filters.location) {
-    query += ` AND address ILIKE $${paramCount}`;
+  if (filters.location && filters.location !== 'AllRegions') {
+    query += ` AND (location_city ILIKE $${paramCount} OR location_state ILIKE $${paramCount})`;
     params.push(`%${filters.location}%`);
     paramCount++;
   }
 
-  if (filters.type) {
-    query += ` AND professional_category ILIKE $${paramCount}`;
-    params.push(`%${filters.type}%`);
-    paramCount++;
-  }
+  // Not filtering by type for now to show all, or map type if needed.
+  // if (filters.type) { }
 
-  query += ` ORDER BY rating DESC NULLS LAST LIMIT 20`;
+  query += ` ORDER BY created_at DESC`;
 
   const result = await pool.query(query, params);
 
-  return result.rows.map(row => ({
-    ...row,
-    avatar: row.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase(),
-    tier: row.rating >= 4.5 ? 'Platinum' : row.rating >= 4.0 ? 'Gold' : 'Silver',
-    status: 'Available',
-    projects: Math.floor(Math.random() * 50) + 5, // Just for UI completeness
-    yearsExperience: Math.floor(Math.random() * 20) + 2,
-    phone: '(512) 555-0100', // Placeholders for now as they aren't always in companies table
-    email: 'contact@partner.com'
-  }));
+  return result.rows.map(row => {
+    // Format budget
+    const min = row.budget_min ? `$${(row.budget_min / 1000).toFixed(0)}k` : '';
+    const max = row.budget_max ? `$${(row.budget_max / 1000).toFixed(0)}k` : '';
+    const budget = (min && max) ? `${min} - ${max}` : (min || max || 'Negotiable');
+
+    // Normalize category/trades
+    const categoryMap: any = {
+      'kitchen_remodel': 'Residential',
+      'bathroom_remodel': 'Residential',
+      'commercial_renovation': 'Commercial',
+      'roofing': 'Construction',
+      'new_construction': 'Construction'
+    };
+
+    return {
+      id: row.id,
+      name: row.name,
+      location: row.location || 'Unknown',
+      distance: '5 mi', // Placeholders
+      distanceValue: 5,
+      budget,
+      category: categoryMap[row.category] || 'General',
+      projectType: row.category,
+      source: row.source,
+      posted: new Date(row.posted).toLocaleDateString(),
+      deadline: new Date(row.deadline).toISOString().split('T')[0],
+      nigpCode: '912-00',
+      matchScore: Math.floor(Math.random() * 15) + 85,
+      isProfileMatch: Math.random() > 0.7,
+      trades: [row.category.replace('_', ' ').toUpperCase()],
+      description: row.description,
+      owner: 'Verified Client',
+      sqft: '2,500',
+      duration: '3-6 months',
+      status: row.status.charAt(0).toUpperCase() + row.status.slice(1)
+    };
+  });
 };
 
-// Get All Bids (Invitations)
-export const getBids = async (gcId: number) => {
+// Get All Bids (Invitations) - Renamed to getSentInvitations to avoid conflict
+export const getSentInvitations = async (gcId: number) => {
   const result = await pool.query(
     `SELECT 
       i.id, 
