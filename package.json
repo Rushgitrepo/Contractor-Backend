@@ -11,6 +11,7 @@
     "migrate:safe": "node -r ts-node/register scripts/migrate-safe.ts",
     "migrate:fresh": "node scripts/create-db.js && npm run migrate",
     "import:companies": "node -r ts-node/register src/database/addNewCompanies.ts",
+    "seed:projects": "node -r ts-node/register src/database/seedProjects.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
