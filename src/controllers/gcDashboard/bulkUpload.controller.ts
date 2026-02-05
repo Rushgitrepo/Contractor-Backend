@@ -29,12 +29,13 @@ export const bulkUploadProjects = async (req: AuthRequest, res: Response): Promi
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
       'text/csv', // .csv
+      'application/pdf', // .pdf
     ];
 
     if (!allowedTypes.includes(req.file.mimetype)) {
       // Delete uploaded file
       fs.unlinkSync(req.file.path);
-      
+
       res.status(400).json({
         success: false,
         error: {
@@ -58,7 +59,7 @@ export const bulkUploadProjects = async (req: AuthRequest, res: Response): Promi
     // Delete uploaded file after processing
     try {
       fs.unlinkSync(req.file.path);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting temp file:', error);
     }
 
@@ -81,12 +82,12 @@ export const bulkUploadProjects = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error: any) {
     console.error('Bulk upload error:', error);
-    
+
     // Clean up file if exists
     if (req.file && fs.existsSync(req.file.path)) {
       try {
         fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
+      } catch (cleanupError: any) {
         console.error('Error cleaning up file:', cleanupError);
       }
     }

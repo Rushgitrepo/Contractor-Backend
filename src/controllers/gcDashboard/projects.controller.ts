@@ -395,7 +395,7 @@ export const getRecentProjects = async (req: AuthRequest, res: Response): Promis
 };
 
 // Get Project Discovery
-export const getProjectDiscovery = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProjectDiscovery = async (req: any, res: Response): Promise<void> => {
     try {
         const filters = {
             search: req.query.search as string,

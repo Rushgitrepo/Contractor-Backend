@@ -178,6 +178,28 @@ router.get(
 
 
 // ============================================
+// MARKETPLACE / PUBLIC ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/gc-dashboard/project-discovery:
+ *   get:
+ *     summary: Discover subcontractors and suppliers (or Marketplace Projects)
+ *     tags: [Marketplace]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ */
+router.get('/project-discovery', projectsController.getProjectDiscovery);
+
+// ============================================
 // GENERAL DASHBOARD ROUTES (GC Restricted)
 // ============================================
 
@@ -228,25 +250,7 @@ router.get('/recent-projects', projectsController.getRecentProjects);
  */
 router.get('/sent-invitations', projectsController.getSentInvitations);
 
-/**
- * @swagger
- * /api/gc-dashboard/project-discovery:
- *   get:
- *     summary: Discover subcontractors and suppliers (or Marketplace Projects)
- *     tags: [GC Dashboard]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- */
-router.get('/project-discovery', projectsController.getProjectDiscovery);
+
 
 // ============================================
 // PROJECTS ROUTES
