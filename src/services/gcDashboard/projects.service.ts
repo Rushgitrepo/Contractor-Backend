@@ -5,24 +5,26 @@ import { config } from '../../config';
 export interface CreateProjectData {
   gcId: number;
   name: string;
-  location?: string;
   client?: string;
+  project_type?: string;
+  city?: string;
+  state?: string;
+  contract_value?: number;
   status?: string;
-  budget?: number;
-  duration?: number;
-  description?: string;
-  progress?: number;
+  start_date?: string;
+  expected_completion_date?: string;
 }
 
 export interface UpdateProjectData {
   name?: string;
-  location?: string;
   client?: string;
+  project_type?: string;
+  city?: string;
+  state?: string;
+  contract_value?: number;
   status?: string;
-  budget?: number;
-  duration?: number;
-  description?: string;
-  progress?: number;
+  start_date?: string;
+  expected_completion_date?: string;
 }
 
 export interface ProjectFilters {
@@ -51,19 +53,20 @@ export const createProject = async (data: CreateProjectData) => {
   }
 
   const result = await pool.query(
-    `INSERT INTO gc_projects (gc_id, name, location, client, status, budget, duration, description, progress)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO gc_projects (gc_id, name, client, project_type, city, state, contract_value, status, start_date, expected_completion_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
     [
       data.gcId,
       data.name,
-      data.location || null,
       data.client || null,
+      data.project_type || null,
+      data.city || null,
+      data.state || null,
+      data.contract_value || null,
       data.status || 'Planning',
-      data.budget || null,
-      data.duration || null,
-      data.description || null,
-      data.progress || 0,
+      data.start_date || null,
+      data.expected_completion_date || null,
     ]
   );
   return result.rows[0];

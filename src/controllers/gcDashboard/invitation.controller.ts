@@ -83,45 +83,49 @@ export const inviteTeamMember = async (req: AuthRequest, res: Response): Promise
       message,
     });
 
-    // Send invitations
-    const results = {
-      email: false,
-      sms: false,
+    // Send invitations in background
+    const sendInvitationsBackground = async () => {
+      try {
+        if (email) {
+          // Fetch GC info for the email
+          const gcResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [gcId]);
+          const gcName = gcResult.rows.length > 0
+            ? `${gcResult.rows[0].first_name} ${gcResult.rows[0].last_name}`
+            : req.user!.email || 'General Contractor';
+
+          await invitationService.sendEmailInvitation(
+            email,
+            project.name,
+            gcName,
+            role || 'Team Member',
+            invitation.token,
+            message
+          );
+        }
+
+        if (phone) {
+          await invitationService.sendSmsInvitation(
+            phone,
+            project.name,
+            req.user!.email || 'General Contractor',
+            invitation.token
+          );
+        }
+      } catch (backgroundError) {
+        console.error('Background invitation sending failed:', backgroundError);
+      }
     };
 
-    if (email) {
-      // Fetch GC info for the email
-      const gcResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [gcId]);
-      const gcName = gcResult.rows.length > 0
-        ? `${gcResult.rows[0].first_name} ${gcResult.rows[0].last_name}`
-        : req.user!.email || 'General Contractor';
-
-      results.email = await invitationService.sendEmailInvitation(
-        email,
-        project.name,
-        gcName,
-        role || 'Team Member',
-        invitation.token,
-        message
-      );
-    }
-
-    if (phone) {
-      results.sms = await invitationService.sendSmsInvitation(
-        phone,
-        project.name,
-        req.user!.email || 'General Contractor',
-        invitation.token
-      );
-    }
+    // Trigger background sending without awaiting
+    sendInvitationsBackground();
 
     res.status(201).json({
       success: true,
       data: {
         invitation,
-        sent: results,
+        status: 'queued',
       },
-      message: 'Invitation sent successfully',
+      message: 'Invitation queuing for delivery',
       meta: {
         timestamp: new Date().toISOString(),
       },

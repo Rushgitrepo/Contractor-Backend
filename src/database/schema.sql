@@ -115,6 +115,7 @@ CREATE TABLE general_contractor_profiles (
   service_cities TEXT[],
   service_zip_codes TEXT[],
   awards TEXT[],
+  licenses TEXT[],
   certifications TEXT[],
   featured_reviewer_name VARCHAR(255),
   featured_review_text TEXT,
@@ -160,6 +161,29 @@ CREATE TABLE supplier_profiles (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- GC Projects Table
+DROP TABLE IF EXISTS gc_projects CASCADE;
+CREATE TABLE gc_projects (
+  id SERIAL PRIMARY KEY,
+  gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  client VARCHAR(255),
+  project_type VARCHAR(255),
+  city VARCHAR(255),
+  state VARCHAR(100),
+  contract_value DECIMAL(12,2),
+  status VARCHAR(50) DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
+  start_date DATE,
+  expected_completion_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP
+);
+
+CREATE INDEX idx_gc_projects_gc_id ON gc_projects(gc_id);
+CREATE INDEX idx_gc_projects_status ON gc_projects(status);
+CREATE INDEX idx_gc_projects_deleted_at ON gc_projects(deleted_at);
+
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
@@ -176,6 +200,10 @@ $$ language 'plpgsql';
 -- Apply triggers
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gc_projects_updated_at ON gc_projects;
+CREATE TRIGGER update_gc_projects_updated_at BEFORE UPDATE ON gc_projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
@@ -364,11 +392,15 @@ CREATE TABLE IF NOT EXISTS gc_projects (
   id SERIAL PRIMARY KEY,
   gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  location VARCHAR(255),
   client VARCHAR(255),
+  project_type VARCHAR(100),
+  city VARCHAR(100),
+  state VARCHAR(50),
+  contract_value DECIMAL(15, 2),
   status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
-  budget DECIMAL(15, 2),
-  duration INTEGER, -- in months
+  start_date DATE,
+  expected_completion_date DATE,
+  duration INTEGER, -- in months (kept for backward compatibility)
   description TEXT,
   progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

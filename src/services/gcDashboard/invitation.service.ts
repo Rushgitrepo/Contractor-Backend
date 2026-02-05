@@ -39,7 +39,7 @@ export const sendEmailInvitation = async (
   token: string,
   customMessage?: string
 ) => {
-  const invitationLink = `${config.app.frontendUrl}/accept-invitation?token=${token}`;
+  const invitationLink = `${config.app.frontendUrl}/signup?token=${token}`;
 
   const subject = `You're invited to join the project "${projectName}" on ContractorList`;
   const html = `
@@ -92,7 +92,7 @@ export const sendSmsInvitation = async (
   gcName: string,
   token: string
 ) => {
-  const invitationLink = `${config.app.frontendUrl}/accept-invitation?token=${token}`;
+  const invitationLink = `${config.app.frontendUrl}/signup?token=${token}`;
   const message = `${gcName} invited you to join project "${projectName}". Accept here: ${invitationLink}`;
 
   return sendSms(phone, message);

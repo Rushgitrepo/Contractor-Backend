@@ -85,31 +85,28 @@ const validateProjectData = (row: any, rowIndex: number): CreateProjectData | nu
 
   // Required field: name
   if (!row.name && !row.Name && !row.project_name && !row['Project Name']) {
-    errors.push('Missing required field: name');
+    errors.push('Missing required field: Project Name');
   }
 
   const name = row.name || row.Name || row.project_name || row['Project Name'];
-  const location = row.location || row.Location || null;
-  const client = row.client || row.Client || null;
-  const status = row.status || row.Status || 'Planning';
-  const budget = row.budget || row.Budget || null;
-  const duration = row.duration || row.Duration || null;
-  const description = row.description || row.Description || null;
+  const client = row.client || row.Client || row.client_name || row['Client Name'] || null;
+  const project_type = row.project_type || row['Project Type'] || row.type || null;
+  const city = row.city || row.City || null;
+  const state = row.state || row.State || null;
+  const contract_value = row.contract_value || row['Contract Value'] || row.budget || null;
+  const status = row.status || row.Status || row.project_status || row['Project Status'] || 'Planning';
+  const start_date = row.start_date || row['Start Date'] || null;
+  const expected_completion_date = row.expected_completion_date || row['Expected Completion Date'] || null;
 
   // Validate status
-  const validStatuses = ['Planning', 'In Progress', 'Bidding', 'Active', 'On Hold', 'Completed', 'Cancelled'];
+  const validStatuses = ['Planning', 'Bidding', 'Active', 'Completed', 'On Hold'];
   if (status && !validStatuses.includes(status)) {
     errors.push(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
   }
 
-  // Validate budget (if provided)
-  if (budget && isNaN(Number(budget))) {
-    errors.push(`Invalid budget: ${budget}. Must be a number`);
-  }
-
-  // Validate duration (if provided)
-  if (duration && isNaN(Number(duration))) {
-    errors.push(`Invalid duration: ${duration}. Must be a number`);
+  // Validate contract_value (if provided)
+  if (contract_value && isNaN(Number(contract_value))) {
+    errors.push(`Invalid contract value: ${contract_value}. Must be a number`);
   }
 
   if (errors.length > 0) {
@@ -119,12 +116,14 @@ const validateProjectData = (row: any, rowIndex: number): CreateProjectData | nu
   return {
     gcId: 0, // Will be set by controller
     name,
-    location,
     client,
+    project_type,
+    city,
+    state,
+    contract_value: contract_value ? Number(contract_value) : undefined,
     status,
-    budget: budget ? Number(budget) : undefined,
-    duration: duration ? Number(duration) : undefined,
-    description,
+    start_date,
+    expected_completion_date,
   };
 };
 
