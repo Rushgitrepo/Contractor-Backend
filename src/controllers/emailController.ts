@@ -83,9 +83,10 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
 
     // Generate new verification token
     const { generateEmailVerificationToken } = require('../utils/jwt');
-    const { sendVerificationEmail } = require('../utils/email');
+    const { sendVerificationLinkEmail } = require('../services/emailService');
     
     const token = generateEmailVerificationToken(user.id, user.email);
+
 
     // Save token to database
     await pool.query(
@@ -94,7 +95,8 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
     );
 
     // Send email
-    await sendVerificationEmail(user.email, user.name, token);
+    await sendVerificationLinkEmail(user.email, user.name, token);
+
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

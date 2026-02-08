@@ -5,9 +5,10 @@ import { generateToken, generatePasswordResetToken, verifyToken } from '../utils
 import { LoginRequest, RegisterRequest } from '../types';
 import { HTTP_STATUS, MESSAGES } from '../constants';
 import { config } from '../config';
-import { sendPasswordResetEmail } from '../utils/email';
+import { sendPasswordResetEmail } from '../services/emailService';
 
 import logger from '../utils/logger';
+
 
 export const register = async (req: Request, res: Response) => {
   const {

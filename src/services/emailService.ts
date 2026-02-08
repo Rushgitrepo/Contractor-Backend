@@ -81,3 +81,57 @@ export const sendTeamMemberInvitation = async (to: string, name: string, gcName:
   `;
   return sendEmail(to, subject, html);
 };
+
+export const sendVerificationLinkEmail = async (email: string, name: string, token: string) => {
+  const verificationUrl = `${config.frontendUrl}/verify-email?token=${token}`;
+
+  const subject = 'Verify Your Email - ContractorList';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Welcome to ContractorList, ${name}!</h2>
+      <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
+      <a href="${verificationUrl}" 
+         style="display: inline-block; padding: 12px 24px; background-color: #EAB308; 
+                color: #000; text-decoration: none; border-radius: 5px; margin: 20px 0;">
+        Verify Email
+      </a>
+      <p>Or copy and paste this link in your browser:</p>
+      <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
+      <p>This link will expire in 24 hours.</p>
+      <p>If you didn't create an account, please ignore this email.</p>
+    </div>
+  `;
+
+  const success = await sendEmail(email, subject, html);
+  if (!success) {
+    throw new Error('Failed to send verification email');
+  }
+};
+
+export const sendPasswordResetEmail = async (email: string, name: string, token: string) => {
+  const resetUrl = `${config.frontendUrl}/reset-password?token=${token}`;
+
+  const subject = 'Password Reset Request - ContractorList';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Password Reset Request</h2>
+      <p>Hi ${name},</p>
+      <p>You requested to reset your password. Click the button below to reset it:</p>
+      <a href="${resetUrl}" 
+         style="display: inline-block; padding: 12px 24px; background-color: #EAB308; 
+                color: #000; text-decoration: none; border-radius: 5px; margin: 20px 0;">
+        Reset Password
+      </a>
+      <p>Or copy and paste this link in your browser:</p>
+      <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't request a password reset, please ignore this email.</p>
+    </div>
+  `;
+
+  const success = await sendEmail(email, subject, html);
+  if (!success) {
+    throw new Error('Failed to send password reset email');
+  }
+};
+
