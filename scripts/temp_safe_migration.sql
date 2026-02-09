@@ -236,28 +236,31 @@ CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
 
 
 -- ============================================
--- REAL-TIME MESSAGING
+-- REAL-TIME MESSAGING (v2)
 -- ============================================
-
 
 -- Conversations (Chat Rooms)
 CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(255), -- Optional, useful for group chats or project topics
-  type VARCHAR(50) DEFAULT 'direct' CHECK (type IN ('direct', 'group', 'project')),
-  related_entity_id UUID, -- Optional link to Project ID or Bid ID
+  title VARCHAR(255),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('direct','group','project')),
+  related_project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(related_project_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_type ON conversations(type);
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Participants (Users in a conversation)
 CREATE TABLE IF NOT EXISTS conversation_participants (
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_read_at TIMESTAMP,
   PRIMARY KEY (conversation_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_cp_user ON conversation_participants(user_id);
@@ -265,19 +268,20 @@ CREATE INDEX IF NOT EXISTS idx_cp_user ON conversation_participants(user_id);
 -- Messages
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT, -- Text message
-  attachments JSONB DEFAULT '[]', -- File URLs
-  message_type VARCHAR(50) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'system')),
-  is_read BOOLEAN DEFAULT FALSE, -- Simple read status (for 1:1)
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text','image','file','system')),
+  content TEXT,
+  attachments JSONB DEFAULT '[]',
+  is_deleted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
 
 -- ============================================
 -- GC DASHBOARD TABLES
 -- ============================================
+
 
 -- Projects Table
 CREATE TABLE IF NOT EXISTS gc_projects (
@@ -313,10 +317,7 @@ CREATE TABLE IF NOT EXISTS gc_team_members (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
-CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- Project Team Assignments (Many-to-Many)
 CREATE TABLE IF NOT EXISTS gc_project_team_assignments (

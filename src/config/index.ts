@@ -71,7 +71,7 @@ export const config = {
 
   // Rate Limiting
   rateLimit: {
-    authWindowMinutes: parseInt(process.env.AUTH_LIMIT_WINDOW_MINUTES || '15'),
+    authWindowMinutes: parseInt(process.env.AUTH_LIMIT_WINDOW_MINUTES || '1'),
     authMaxAttempts: parseInt(process.env.AUTH_LIMIT_MAX_ATTEMPTS || '20'),
     apiWindowMinutes: parseInt(process.env.API_LIMIT_WINDOW_MINUTES || '15'),
     apiMaxAttempts: parseInt(process.env.API_LIMIT_MAX_ATTEMPTS || '100'),

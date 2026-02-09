@@ -3,6 +3,7 @@ import { config } from '../../config';
 import { sendEmail } from '../emailService';
 import { sendSms } from '../smsService';
 import { v4 as uuidv4 } from 'uuid';
+import * as chatService from '../chat.service';
 
 
 export interface InvitationData {
@@ -101,7 +102,7 @@ export const sendSmsInvitation = async (
 // Get invitation by token
 export const getInvitationByToken = async (token: string) => {
   const result = await pool.query(
-    `SELECT i.*, p.name as project_name, u.name as gc_name
+    `SELECT i.*, p.name as project_name, u.first_name || ' ' || u.last_name as gc_name
      FROM gc_project_invitations i
      JOIN gc_projects p ON p.id = i.project_id
      JOIN users u ON u.id = i.gc_id
@@ -117,20 +118,95 @@ export const getInvitationByToken = async (token: string) => {
 };
 
 // Accept invitation
-export const acceptInvitation = async (token: string) => {
-  const result = await pool.query(
-    `UPDATE gc_project_invitations
-     SET status = 'accepted', accepted_at = NOW()
-     WHERE token = $1 AND status = 'pending' AND expires_at > NOW()
-     RETURNING *`,
-    [token]
-  );
+export const acceptInvitation = async (token: string, userId: number) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (result.rows.length === 0) {
-    return null;
+    // 1. Get invitation details
+    const inviteRes = await client.query(
+      `SELECT * FROM gc_project_invitations WHERE token = $1 AND status = 'pending' AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (inviteRes.rows.length === 0) {
+      throw new Error('Invalid or expired invitation token');
+    }
+
+    const invitation = inviteRes.rows[0];
+
+    // 2. Update invitation status
+    await client.query(
+      `UPDATE gc_project_invitations SET status = 'accepted', accepted_at = NOW() WHERE token = $1`,
+      [token]
+    );
+
+    // 3. Find or create team member entry
+    const teamMemberRes = await client.query(
+      `SELECT id FROM gc_team_members WHERE gc_id = $1 AND (email = $2 OR user_id = $3)`,
+      [invitation.gc_id, invitation.email, userId]
+    );
+
+    let teamMemberId: number;
+
+    if (teamMemberRes.rows.length > 0) {
+      teamMemberId = teamMemberRes.rows[0].id;
+      // Update team member with user_id if not set
+      await client.query(
+        `UPDATE gc_team_members SET user_id = $1, status = 'Active' WHERE id = $2`,
+        [userId, teamMemberId]
+      );
+    } else {
+      // Create new team member
+      // Fetch user name for the record
+      const userResult = await client.query('SELECT first_name, last_name FROM users WHERE id = $1', [userId]);
+      const fullName = userResult.rows.length > 0
+        ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`
+        : 'Team Member';
+
+      const newMemberRes = await client.query(
+        `INSERT INTO gc_team_members (gc_id, name, email, phone, role, type, user_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active')
+         RETURNING id`,
+        [
+          invitation.gc_id,
+          fullName,
+          invitation.email,
+          invitation.phone,
+          invitation.role || 'Member',
+          'Contractor', // Default to contractor if unknown
+          userId
+        ]
+      );
+      teamMemberId = newMemberRes.rows[0].id;
+    }
+
+    // 4. Assign to project if not already assigned
+    const assignmentRes = await client.query(
+      `SELECT id FROM gc_project_team_assignments WHERE project_id = $1 AND team_member_id = $2`,
+      [invitation.project_id, teamMemberId]
+    );
+
+    if (assignmentRes.rows.length === 0) {
+      await client.query(
+        `INSERT INTO gc_project_team_assignments (project_id, team_member_id, role)
+         VALUES ($1, $2, $3)`,
+        [invitation.project_id, teamMemberId, invitation.role]
+      );
+    }
+
+    // 5. Ensure project conversation exists and add user
+    await chatService.getOrCreateProjectConversation(invitation.project_id, invitation.gc_id, userId);
+
+    await client.query('COMMIT');
+
+    return { ...invitation, status: 'accepted', accepted_at: new Date() };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
-
-  return result.rows[0];
 };
 
 // Decline invitation
