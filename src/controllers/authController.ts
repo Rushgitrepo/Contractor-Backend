@@ -77,7 +77,7 @@ export const register = async (req: Request, res: Response) => {
     // 3. Insert User into 'users' table
     const userRes = await client.query(
       `INSERT INTO users (first_name, last_name, email, password, role, phone, is_verified) 
-       VALUES ($1, $2, $3, $4, $5, $6, false) RETURNING id`,
+       VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id`,
       [firstName, lastName, email, hashedPassword, systemRole, phone]
     );
     const userId = userRes.rows[0].id;

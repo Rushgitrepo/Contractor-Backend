@@ -58,6 +58,7 @@ export const initializeSocket = (io: Server) => {
                     socket.join(r.conversation_id);
                     // console.log(`User ${userId} joined room ${r.conversation_id}`);
                 });
+                console.log(`User ${userId} auto-joined ${convs.rowCount} rooms`);
             } catch (err) {
                 console.error('Error joining conversation rooms:', err);
             }
@@ -109,6 +110,7 @@ export const initializeSocket = (io: Server) => {
                 );
 
                 const fullMessage = { ...result.rows[0], sender: senderInfo.rows[0] };
+                console.log(`Emitting message:new to room ${conversationId}`);
                 io.to(conversationId).emit('message:new', fullMessage);
                 io.to(conversationId).emit('conversation:updated', { conversationId, updated_at: new Date().toISOString() });
             } catch (error) {
