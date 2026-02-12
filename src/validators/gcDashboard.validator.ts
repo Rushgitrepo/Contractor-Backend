@@ -3,24 +3,26 @@ import { z } from 'zod';
 // Project Validators
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(255),
-  location: z.string().max(255).optional(),
-  client: z.string().max(255).optional(),
-  status: z.enum(['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled', 'Active']).default('Planning'),
-  budget: z.number().positive().optional(),
-  duration: z.number().int().positive().optional(),
-  description: z.string().optional(),
-  progress: z.number().int().min(0).max(100).default(0).optional(),
+  client: z.string().max(255).optional().or(z.literal('')),
+  project_type: z.string().max(255).optional().or(z.literal('')),
+  city: z.string().max(255).optional().or(z.literal('')),
+  state: z.string().max(100).optional().or(z.literal('')),
+  contract_value: z.number().positive().optional(),
+  status: z.enum(['Planning', 'Bidding', 'Active', 'Completed', 'On Hold']).default('Planning'),
+  start_date: z.string().optional().or(z.literal('')),
+  expected_completion_date: z.string().optional().or(z.literal('')),
 });
 
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  location: z.string().max(255).optional(),
-  client: z.string().max(255).optional(),
-  status: z.enum(['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled', 'Active']).optional(),
-  budget: z.number().positive().optional(),
-  duration: z.number().int().positive().optional(),
-  description: z.string().optional(),
-  progress: z.number().int().min(0).max(100).optional(),
+  client: z.string().max(255).optional().or(z.literal('')),
+  project_type: z.string().max(255).optional().or(z.literal('')),
+  city: z.string().max(255).optional().or(z.literal('')),
+  state: z.string().max(100).optional().or(z.literal('')),
+  contract_value: z.number().positive().optional(),
+  status: z.enum(['Planning', 'Bidding', 'Active', 'Completed', 'On Hold']).optional(),
+  start_date: z.string().optional().or(z.literal('')),
+  expected_completion_date: z.string().optional().or(z.literal('')),
 });
 
 export const projectQuerySchema = z.object({

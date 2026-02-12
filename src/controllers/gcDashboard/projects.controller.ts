@@ -8,6 +8,8 @@ export const createProject = async (req: AuthRequest, res: Response): Promise<vo
     try {
         const gcId = req.user!.id;
 
+        console.log('Create project request body:', JSON.stringify(req.body, null, 2));
+
         // Validate request body
         const validatedData = createProjectSchema.parse(req.body);
 
@@ -26,7 +28,12 @@ export const createProject = async (req: AuthRequest, res: Response): Promise<vo
             },
         });
     } catch (error: any) {
+        console.error('Create project error - Full error:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+
         if (error.name === 'ZodError') {
+            console.error('Validation errors:', JSON.stringify(error.errors, null, 2));
             res.status(400).json({
                 success: false,
                 error: {
@@ -395,7 +402,7 @@ export const getRecentProjects = async (req: AuthRequest, res: Response): Promis
 };
 
 // Get Project Discovery
-export const getProjectDiscovery = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProjectDiscovery = async (req: any, res: Response): Promise<void> => {
     try {
         const filters = {
             search: req.query.search as string,

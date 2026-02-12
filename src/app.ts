@@ -14,6 +14,8 @@ import contractorUpdateRoutes from './routes/contractorUpdateRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import chatRoutes from './routes/chatRoutes';
 import gcDashboardRoutes from './routes/gcDashboard.routes';
+import scDashboardRoutes from './routes/scDashboard.routes';
+
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
 import { setupSwagger } from './swagger';
@@ -68,6 +70,8 @@ app.use('/api/contractor', contractorUpdateRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/gc-dashboard', gcDashboardRoutes);
+app.use('/api/sc-dashboard', scDashboardRoutes);
+
 
 // 404 handler
 app.use((req, res) => {

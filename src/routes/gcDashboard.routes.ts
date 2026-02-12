@@ -178,6 +178,60 @@ router.get(
 
 
 // ============================================
+// MARKETPLACE / PUBLIC ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/gc-dashboard/project-discovery:
+ *   get:
+ *     summary: Discover subcontractors and suppliers (or Marketplace Projects)
+ *     tags: [Marketplace]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ */
+router.get('/project-discovery', projectsController.getProjectDiscovery);
+
+// ============================================
+// INVITATIONS MANAGEMENT (For invited users)
+// ============================================
+
+// Public route to check if a token is valid
+router.get(
+    '/invitations/verify/:token',
+    invitationController.verifyInvitation
+);
+
+router.get(
+    '/invitations/my',
+    authenticate,
+    invitationController.getMyPendingInvitations
+);
+
+router.post(
+    '/invitations/accept',
+    authenticate,
+    invitationController.acceptInvitation
+);
+
+router.post(
+    '/invitations/decline',
+    authenticate,
+    invitationController.declineInvitation
+);
+
+// We need a decline function if not already there, but accept is priority.
+// controller already had declineInvitation logic in the service but maybe not in controller.
+// I'll add accept first.
+
+// ============================================
 // GENERAL DASHBOARD ROUTES (GC Restricted)
 // ============================================
 
@@ -228,25 +282,7 @@ router.get('/recent-projects', projectsController.getRecentProjects);
  */
 router.get('/sent-invitations', projectsController.getSentInvitations);
 
-/**
- * @swagger
- * /api/gc-dashboard/project-discovery:
- *   get:
- *     summary: Discover subcontractors and suppliers (or Marketplace Projects)
- *     tags: [GC Dashboard]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- */
-router.get('/project-discovery', projectsController.getProjectDiscovery);
+
 
 // ============================================
 // PROJECTS ROUTES

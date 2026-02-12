@@ -12,7 +12,9 @@ interface AuthSocket extends Socket {
 }
 
 export const initializeSocket = (io: Server) => {
-    // Middleware for authentication
+    // expose io on app for HTTP controllers
+    io.engine?.on?.('connection', () => { });
+
     io.use((socket: AuthSocket, next) => {
         let token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
 
@@ -31,8 +33,6 @@ export const initializeSocket = (io: Server) => {
         }
 
         try {
-            // Verify token directly using jwt library as utils might leverage different logic or Env 
-            // Assuming config.jwt.secret holds the secret
             const decoded = jwt.verify(token, config.jwt.secret || process.env.JWT_SECRET!) as any;
             socket.user = decoded;
             next();
@@ -42,96 +42,105 @@ export const initializeSocket = (io: Server) => {
         }
     });
 
-    io.on('connection', (socket: AuthSocket) => {
-        // console.log(`User connected: ${socket.user?.id}`);
+    io.on('connection', async (socket: AuthSocket) => {
+        const userId = socket.user?.id;
+        if (userId) {
+            console.log(`User connected to socket: ${userId}`);
+            socket.join(`user:${userId}`);
 
-        // Join user's own room for private notifications
-        if (socket.user?.id) {
-            socket.join(`user:${socket.user.id}`);
+            try {
+                // Automatically join all rooms this user is a participant of
+                const convs = await pool.query(
+                    'SELECT conversation_id FROM conversation_participants WHERE user_id = $1',
+                    [userId]
+                );
+                convs.rows.forEach(r => {
+                    socket.join(r.conversation_id);
+                    // console.log(`User ${userId} joined room ${r.conversation_id}`);
+                });
+                console.log(`User ${userId} auto-joined ${convs.rowCount} rooms`);
+            } catch (err) {
+                console.error('Error joining conversation rooms:', err);
+            }
         }
 
-        // Join a specific conversation
-        socket.on('join_conversation', async (conversationId: string) => {
-            try {
-                // Verify user is a participant
-                const check = await pool.query(
-                    'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
-                    [conversationId, socket.user!.id]
-                );
+        const requireParticipant = async (conversationId: string) => {
+            if (!userId) return false;
+            const check = await pool.query(
+                'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
+                [conversationId, userId]
+            );
+            return check.rows.length > 0;
+        };
 
-                if (check.rows.length > 0) {
+        socket.on('conversation:join', async (conversationId: string) => {
+            try {
+                if (await requireParticipant(conversationId)) {
                     socket.join(conversationId);
-                    // console.log(`User ${socket.user?.id} joined room ${conversationId}`);
+                    console.log(`User ${userId} explicitly joined room ${conversationId}`);
                 } else {
                     socket.emit('error', { message: 'Unauthorized to join this conversation' });
                 }
             } catch (error) {
-                console.error('Join error:', error);
+                console.error('conversation:join error', error);
             }
         });
 
-        // Handle sending messages
-        socket.on('send_message', async (data: { conversationId: string; content: string; attachments?: any[] }) => {
-            const { conversationId, content, attachments } = data;
-            const senderId = socket.user?.id;
-
+        socket.on('message:send', async (data: { conversationId: string; content?: string; attachments?: any[]; messageType?: string }) => {
+            const { conversationId, content, attachments = [], messageType = 'text' } = data;
+            const senderId = userId;
             if (!senderId) return;
-
             try {
-                // Validate participation again (optional but safer)
-                const participantCheck = await pool.query(
-                    'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
-                    [conversationId, senderId]
-                );
-
-                if (participantCheck.rows.length === 0) {
-                    return socket.emit('error', 'You are not a participant of this conversation');
+                if (!(await requireParticipant(conversationId))) {
+                    return socket.emit('error', { message: 'Unauthorized' });
                 }
 
-                // Insert Message
                 const result = await pool.query(
-                    `INSERT INTO messages (conversation_id, sender_id, content, attachments)
-           VALUES ($1, $2, $3, $4)
-           RETURNING *`,
-                    [conversationId, senderId, content, JSON.stringify(attachments || [])]
+                    `INSERT INTO messages (conversation_id, sender_id, message_type, content, attachments)
+                     VALUES ($1, $2, $3, $4, $5)
+                     RETURNING *`,
+                    [conversationId, senderId, messageType, content, JSON.stringify(attachments)]
                 );
 
-                const message = result.rows[0];
+                await pool.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [conversationId]);
 
-                // Fetch sender details to populate in real-time
                 const senderInfo = await pool.query(
                     'SELECT id, first_name, last_name, email FROM users WHERE id = $1',
                     [senderId]
                 );
 
-                const fullMessage = {
-                    ...message,
-                    sender: senderInfo.rows[0]
-                };
-
-                // Broadcast to everyone in the room (including sender for confirmation)
-                io.to(conversationId).emit('new_message', fullMessage);
-
-                // Update conversation updated_at
-                await pool.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [conversationId]);
-
+                const fullMessage = { ...result.rows[0], sender: senderInfo.rows[0] };
+                console.log(`Emitting message:new to room ${conversationId}`);
+                io.to(conversationId).emit('message:new', fullMessage);
+                io.to(conversationId).emit('conversation:updated', { conversationId, updated_at: new Date().toISOString() });
             } catch (error) {
-                console.error('Message send error:', error);
-                socket.emit('error', 'Failed to send message');
+                console.error('message:send error', error);
+                socket.emit('error', { message: 'Failed to send message' });
             }
         });
 
-        // Typing indicators
-        socket.on('typing_start', (conversationId) => {
-            socket.to(conversationId).emit('user_typing', { userId: socket.user?.id, conversationId });
-        });
-
-        socket.on('typing_stop', (conversationId) => {
-            socket.to(conversationId).emit('user_stopped_typing', { userId: socket.user?.id, conversationId });
+        socket.on('message:delete', async (messageId: string) => {
+            const senderId = userId;
+            if (!senderId) return;
+            try {
+                const message = await pool.query('SELECT id, sender_id, conversation_id FROM messages WHERE id = $1', [messageId]);
+                if (message.rows.length === 0) return;
+                const row = message.rows[0];
+                if (row.sender_id !== senderId) {
+                    return socket.emit('error', { message: 'Only sender can delete message' });
+                }
+                await pool.query(
+                    `UPDATE messages SET is_deleted = TRUE, content = NULL, attachments = '[]'::jsonb WHERE id = $1`,
+                    [messageId]
+                );
+                io.to(row.conversation_id).emit('message:deleted', { id: messageId, conversationId: row.conversation_id });
+            } catch (error) {
+                console.error('message:delete error', error);
+            }
         });
 
         socket.on('disconnect', () => {
-            // console.log('User disconnected');
+            console.log(`User disconnected from socket: ${userId}`);
         });
     });
 };

@@ -1,14 +1,6 @@
 import { Request, Response } from 'express';
-import { Pool } from 'pg';
-import { config } from '../config';
+import pool from '../config/database';
 
-const pool = new Pool({
-  host: config.database.host,
-  port: config.database.port,
-  database: config.database.name,
-  user: config.database.user,
-  password: config.database.password,
-});
 
 // Get all companies from database
 export const getAllCompanies = async (req: Request, res: Response): Promise<void> => {
@@ -524,7 +516,7 @@ export const updateMyCompany = async (req: Request, res: Response): Promise<void
         'eco_friendly', 'locally_owned', 'offers_custom_work', 'provides_3d_visualization',
         'professional_category', 'budget_range', 'years_in_business', 'employees_count',
         'languages', 'services_offered', 'specialties', 'service_areas', 'service_cities',
-        'service_zip_codes', 'awards', 'certifications', 'featured_reviewer_name',
+        'service_zip_codes', 'awards', 'certifications', 'licenses', 'featured_reviewer_name',
         'featured_review_text', 'featured_review_rating'
       ];
 
@@ -534,8 +526,20 @@ export const updateMyCompany = async (req: Request, res: Response): Promise<void
 
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
+          let value = updates[field];
+
+          // Ensure object arrays are converted to string arrays for TEXT[] columns
+          if ((field === 'licenses' || field === 'certifications') && Array.isArray(value)) {
+            value = value.map((item: any) => {
+              if (typeof item === 'object' && item !== null) {
+                return JSON.stringify(item);
+              }
+              return String(item);
+            });
+          }
+
           updateFields.push(`${field} = $${paramCount}`);
-          queryValues.push(updates[field]);
+          queryValues.push(value);
           paramCount++;
         }
       }

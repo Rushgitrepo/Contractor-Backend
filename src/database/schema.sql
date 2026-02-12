@@ -14,10 +14,14 @@ DROP TABLE IF EXISTS supplier_profiles CASCADE;
 DROP TABLE IF EXISTS client_profiles_legacy CASCADE;
 DROP TABLE IF EXISTS contractor_profiles_legacy CASCADE;
 DROP TABLE IF EXISTS verification_codes CASCADE;
-
+-- Messaging tables (ensure clean rebuild)
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS conversation_participants CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
 
 -- Create users table (Conventional name for Identity)
 CREATE TABLE users (
+
   id SERIAL PRIMARY KEY,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
@@ -115,6 +119,7 @@ CREATE TABLE general_contractor_profiles (
   service_cities TEXT[],
   service_zip_codes TEXT[],
   awards TEXT[],
+  licenses TEXT[],
   certifications TEXT[],
   featured_reviewer_name VARCHAR(255),
   featured_review_text TEXT,
@@ -160,6 +165,29 @@ CREATE TABLE supplier_profiles (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- GC Projects Table
+DROP TABLE IF EXISTS gc_projects CASCADE;
+CREATE TABLE gc_projects (
+  id SERIAL PRIMARY KEY,
+  gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  client VARCHAR(255),
+  project_type VARCHAR(255),
+  city VARCHAR(255),
+  state VARCHAR(100),
+  contract_value DECIMAL(12,2),
+  status VARCHAR(50) DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
+  start_date DATE,
+  expected_completion_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP
+);
+
+CREATE INDEX idx_gc_projects_gc_id ON gc_projects(gc_id);
+CREATE INDEX idx_gc_projects_status ON gc_projects(status);
+CREATE INDEX idx_gc_projects_deleted_at ON gc_projects(deleted_at);
+
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
@@ -176,6 +204,10 @@ $$ language 'plpgsql';
 -- Apply triggers
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gc_projects_updated_at ON gc_projects;
+CREATE TRIGGER update_gc_projects_updated_at BEFORE UPDATE ON gc_projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
@@ -312,63 +344,74 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 
--- ============================================
--- REAL-TIME MESSAGING
--- ============================================
 
-DROP TABLE IF EXISTS messages CASCADE;
-DROP TABLE IF EXISTS conversation_participants CASCADE;
-DROP TABLE IF EXISTS conversations CASCADE;
+
+
+-- ============================================
+-- REAL-TIME MESSAGING (v2)
+-- ============================================
 
 -- Conversations (Chat Rooms)
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(255), -- Optional, useful for group chats or project topics
-  type VARCHAR(50) DEFAULT 'direct' CHECK (type IN ('direct', 'group', 'project')),
-  related_entity_id UUID, -- Optional link to Project ID or Bid ID
+  title VARCHAR(255),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('direct','group','project')),
+  related_project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  related_gc_project_id INTEGER REFERENCES gc_projects(id) ON DELETE CASCADE,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(related_project_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_gc_project ON conversations(related_gc_project_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_type ON conversations(type);
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+
 -- Participants (Users in a conversation)
-CREATE TABLE conversation_participants (
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS conversation_participants (
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_read_at TIMESTAMP,
   PRIMARY KEY (conversation_id, user_id)
 );
-CREATE INDEX idx_cp_user ON conversation_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_cp_user ON conversation_participants(user_id);
 
 -- Messages
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT, -- Text message
-  attachments JSONB DEFAULT '[]', -- File URLs
-  message_type VARCHAR(50) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'system')),
-  is_read BOOLEAN DEFAULT FALSE, -- Simple read status (for 1:1)
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text','image','file','system')),
+  content TEXT,
+  attachments JSONB DEFAULT '[]',
+  is_deleted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
 
 -- ============================================
 -- GC DASHBOARD TABLES
 -- ============================================
+
 
 -- Projects Table
 CREATE TABLE IF NOT EXISTS gc_projects (
   id SERIAL PRIMARY KEY,
   gc_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  location VARCHAR(255),
   client VARCHAR(255),
-  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled', 'Active')),
-  budget DECIMAL(15, 2),
-  duration INTEGER, -- in months
+  project_type VARCHAR(100),
+  city VARCHAR(100),
+  state VARCHAR(50),
+  contract_value DECIMAL(15, 2),
+  status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'Bidding', 'Active', 'Completed', 'On Hold')),
+  start_date DATE,
+  expected_completion_date DATE,
+  duration INTEGER, -- in months (kept for backward compatibility)
   description TEXT,
   progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -393,10 +436,7 @@ CREATE TABLE IF NOT EXISTS gc_team_members (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX idx_messages_created ON messages(created_at);
-CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- Project Team Assignments (Many-to-Many)
 CREATE TABLE IF NOT EXISTS gc_project_team_assignments (

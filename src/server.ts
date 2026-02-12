@@ -35,9 +35,11 @@ const startServer = async () => {
     });
 
     initializeSocket(io);
+    app.set('io', io);
     logger.info('Socket.io initialized');
 
     server.listen(config.port, () => {
+
       logger.info(`Server running on port ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`API: http://localhost:${config.port}/api`);

@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import { Pool } from 'pg';
 import { config } from '../../config';
 import { createProject, CreateProjectData } from './projects.service';
+import fs from 'fs';
 
 const pool = new Pool({
   host: config.database.host,
@@ -18,16 +19,62 @@ export interface BulkUploadResult {
   projects: any[];
 }
 
-// Parse Excel/CSV file and extract project data
-export const parseProjectFile = (filePath: string, fileType: string): any[] => {
+// Parse Excel/CSV/PDF file and extract project data
+export const parseProjectFile = async (filePath: string, fileType: string): Promise<any[]> => {
   try {
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-    
-    return data;
-  } catch (error) {
+    if (fileType === 'application/pdf') {
+      const dataBuffer = fs.readFileSync(filePath);
+      const { PDFParse } = require('pdf-parse');
+      const parser = new PDFParse({ data: dataBuffer });
+      const pdfData = await parser.getText();
+      await parser.destroy();
+
+      // Basic extraction: split by lines and try to find a pattern
+      // Since we give the user a "specific format", we can assume some structure
+      // Let's assume one project per line, comma or pipe separated
+      const lines = pdfData.text.split('\n')
+        .map((l: string) => l.trim())
+        .filter((line: string) => {
+          if (line.length < 3) return false;
+          // Skip page numbers like "Page 1", "1 of 10", "-- 1 --"
+          if (/^page \d+/i.test(line)) return false;
+          if (/^\d+ of \d+$/i.test(line)) return false;
+          if (/^-- \d+.*--$/.test(line)) return false;
+          // Skip headers if they contain our field names
+          if (line.toLowerCase().includes('name') && line.toLowerCase().includes('budget')) return false;
+          return true;
+        });
+
+      const projects: any[] = [];
+      for (const line of lines) {
+        // Try pipe separation first, then comma
+        const parts = line.includes('|') ? line.split('|') : line.split(',');
+
+        if (parts.length >= 1) {
+          const name = parts[0]?.trim().replace(/\.+$/, ''); // Remove trailing dots
+          if (!name || name.length < 2) continue;
+
+          projects.push({
+            name,
+            location: parts[1]?.trim() || 'N/A',
+            client: parts[2]?.trim() || 'N/A',
+            status: parts[3]?.trim() || 'Planning',
+            budget: parts[4]?.trim() || '0',
+            duration: parts[5]?.trim() || '',
+            description: parts[6]?.trim() || '',
+          });
+        }
+      }
+      return projects;
+    } else {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+
+      return data;
+    }
+  } catch (error: any) {
     throw new Error(`Failed to parse file: ${error}`);
   }
 };
@@ -38,31 +85,28 @@ const validateProjectData = (row: any, rowIndex: number): CreateProjectData | nu
 
   // Required field: name
   if (!row.name && !row.Name && !row.project_name && !row['Project Name']) {
-    errors.push('Missing required field: name');
+    errors.push('Missing required field: Project Name');
   }
 
   const name = row.name || row.Name || row.project_name || row['Project Name'];
-  const location = row.location || row.Location || null;
-  const client = row.client || row.Client || null;
-  const status = row.status || row.Status || 'Planning';
-  const budget = row.budget || row.Budget || null;
-  const duration = row.duration || row.Duration || null;
-  const description = row.description || row.Description || null;
+  const client = row.client || row.Client || row.client_name || row['Client Name'] || null;
+  const project_type = row.project_type || row['Project Type'] || row.type || null;
+  const city = row.city || row.City || null;
+  const state = row.state || row.State || null;
+  const contract_value = row.contract_value || row['Contract Value'] || row.budget || null;
+  const status = row.status || row.Status || row.project_status || row['Project Status'] || 'Planning';
+  const start_date = row.start_date || row['Start Date'] || null;
+  const expected_completion_date = row.expected_completion_date || row['Expected Completion Date'] || null;
 
   // Validate status
-  const validStatuses = ['Planning', 'In Progress', 'Bidding', 'On Hold', 'Completed', 'Cancelled'];
+  const validStatuses = ['Planning', 'Bidding', 'Active', 'Completed', 'On Hold'];
   if (status && !validStatuses.includes(status)) {
     errors.push(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
   }
 
-  // Validate budget (if provided)
-  if (budget && isNaN(Number(budget))) {
-    errors.push(`Invalid budget: ${budget}. Must be a number`);
-  }
-
-  // Validate duration (if provided)
-  if (duration && isNaN(Number(duration))) {
-    errors.push(`Invalid duration: ${duration}. Must be a number`);
+  // Validate contract_value (if provided)
+  if (contract_value && isNaN(Number(contract_value))) {
+    errors.push(`Invalid contract value: ${contract_value}. Must be a number`);
   }
 
   if (errors.length > 0) {
@@ -72,12 +116,14 @@ const validateProjectData = (row: any, rowIndex: number): CreateProjectData | nu
   return {
     gcId: 0, // Will be set by controller
     name,
-    location,
     client,
+    project_type,
+    city,
+    state,
+    contract_value: contract_value ? Number(contract_value) : undefined,
     status,
-    budget: budget ? Number(budget) : undefined,
-    duration: duration ? Number(duration) : undefined,
-    description,
+    start_date,
+    expected_completion_date,
   };
 };
 
@@ -96,7 +142,7 @@ export const bulkCreateProjects = async (
 
   try {
     // Parse file
-    const rows = parseProjectFile(filePath, fileType);
+    const rows = await parseProjectFile(filePath, fileType);
 
     if (!rows || rows.length === 0) {
       throw new Error('No data found in file');
@@ -110,7 +156,7 @@ export const bulkCreateProjects = async (
       try {
         // Validate and normalize data
         const projectData = validateProjectData(row, rowNumber);
-        
+
         if (!projectData) {
           result.failed++;
           result.errors.push({
