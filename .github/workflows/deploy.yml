@@ -3,8 +3,8 @@ name: Deploy Backend to VPS
 on:
   push:
     branches:
-      - main  # Ya jo bhi aapki main branch hai
-  workflow_dispatch:  # Manual trigger ke liye
+      - main
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   build-and-deploy:
