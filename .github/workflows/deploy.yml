@@ -1,0 +1,148 @@
+name: Deploy Backend to VPS
+
+on:
+  push:
+    branches:
+      - main  # Ya jo bhi aapki main branch hai
+  workflow_dispatch:  # Manual trigger ke liye
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy_package
+          cp -r dist deploy_package/
+          cp package.json deploy_package/
+          cp package-lock.json deploy_package/
+          # Copy .env if needed (ya secrets se banayenge)
+          echo "Deployment package created"
+
+      - name: Stop backend service on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            export TERM=xterm
+            # PM2 se backend stop karein (agar running hai)
+            if command -v pm2 &> /dev/null; then
+              pm2 stop contractor-backend || true
+            fi
+            echo "Backend service stopped"
+
+      - name: Backup current deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            export TERM=xterm
+            BACKEND_DIR="/home/${{ secrets.BACKEND_USER }}/backend"
+            
+            # Backup previous deployment
+            if [ -d "$BACKEND_DIR/backup" ]; then
+              rm -rf "$BACKEND_DIR/backup"
+            fi
+            if [ -d "$BACKEND_DIR/current" ]; then
+              mv "$BACKEND_DIR/current" "$BACKEND_DIR/backup"
+            fi
+            
+            # Create directories
+            mkdir -p "$BACKEND_DIR/current"
+            echo "Backup completed"
+
+      - name: Upload backend files
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }}" deploy_package/ ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/home/${{ secrets.BACKEND_USER }}/backend/current/
+          rm -f ~/.ssh/deploy_key
+
+      - name: Install dependencies and start backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            export TERM=xterm
+            BACKEND_DIR="/home/${{ secrets.BACKEND_USER }}/backend/current"
+            
+            cd "$BACKEND_DIR"
+            
+            # Install production dependencies
+            npm ci --production
+            
+            # Create .env file from secrets
+            cat > .env << EOF
+NODE_ENV=production
+PORT=${{ secrets.BACKEND_PORT }}
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=contractorlist
+DB_USER=postgres
+DB_PASSWORD=ali980
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+JWT_EXPIRE=15m
+JWT_REFRESH_EXPIRE=7d
+CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+SMTP_USER=${{ secrets.SMTP_USER }}
+SMTP_PASS=${{ secrets.SMTP_PASS }}
+SMTP_HOST=${{ secrets.SMTP_HOST }}
+SMTP_PORT=${{ secrets.SMTP_PORT }}
+EOF
+            
+            # Set permissions
+            chown -R ${{ secrets.BACKEND_USER }}:${{ secrets.BACKEND_USER }} "$BACKEND_DIR"
+            
+            # Start with PM2
+            if command -v pm2 &> /dev/null; then
+              pm2 start dist/server.js --name contractor-backend --update-env
+              pm2 save
+            else
+              echo "PM2 not installed. Please install PM2 on VPS."
+            fi
+            
+            echo "Backend deployment completed!"
+            echo "Deployed at: $(date)"
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            export TERM=xterm
+            sleep 5
+            if command -v pm2 &> /dev/null; then
+              pm2 status contractor-backend
+            fi
+            echo "Health check completed"
