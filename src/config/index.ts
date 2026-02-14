@@ -66,7 +66,7 @@ export const config = {
 
   // CORS
   cors: {
-    origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:3000' || 'https://ipapi.co/json/').split(','),
   },
 
   // Rate Limiting
