@@ -22,6 +22,10 @@ import { setupSwagger } from './swagger';
 
 const app = express();
 
+// Trust proxy is required when running behind a reverse proxy (like CyberPanel/LiteSpeed/Nginx)
+// allowing express-rate-limit to correctly identify users via X-Forwarded-For header
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
